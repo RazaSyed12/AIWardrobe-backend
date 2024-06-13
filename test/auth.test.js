@@ -2,30 +2,32 @@ import request from 'supertest';
 import { expect } from 'chai';
 import mongoose from 'mongoose';
 import sinon from 'sinon';
-import nodemailer from 'nodemailer';
 import app from '../server.js';
 import User from '../models/User.js';
+import nodemailer from 'nodemailer';
 
 describe('Auth API', () => {
+  let transporter;
+  let sendMailStub;
+
   before(async () => {
-    await mongoose.connect('mongodb://localhost:27017/wardrobe');
+    await mongoose.connect('mongodb://localhost:27017/wardrobe', { useNewUrlParser: true, useUnifiedTopology: true });
     await User.deleteMany({});
+
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'your_email@gmail.com',
+        pass: 'your_email_password',
+      },
+    });
+
+    sendMailStub = sinon.stub(transporter, 'sendMail').resolves();
   });
 
   after(async () => {
+    sendMailStub.restore();
     await mongoose.connection.close();
-  });
-
-  let transporter;
-  beforeEach(() => {
-    transporter = {
-      sendMail: sinon.stub().yields(null, { response: '250 OK' }),
-    };
-    sinon.stub(nodemailer, 'createTransport').returns(transporter);
-  });
-
-  afterEach(() => {
-    nodemailer.createTransport.restore();
   });
 
   describe('POST /auth/register', () => {
@@ -33,7 +35,6 @@ describe('Auth API', () => {
       const res = await request(app)
         .post('/auth/register')
         .send({
-          userId: 1,
           name: 'John Doe',
           email: 'john@example.com',
           password: 'password123',
@@ -43,6 +44,34 @@ describe('Auth API', () => {
 
       expect(res.status).to.equal(201);
       expect(res.text).to.equal('User registered successfully');
+    });
+
+    it('should not register a user with a duplicate email', async () => {
+      const res = await request(app)
+        .post('/auth/register')
+        .send({
+          name: 'Jane Doe',
+          email: 'john@example.com',
+          password: 'password123',
+          number: '1234567891',
+          dob: '1990-01-02',
+        });
+
+      expect(res.status).to.equal(500);
+    });
+
+    it('should not register a user with a duplicate number', async () => {
+      const res = await request(app)
+        .post('/auth/register')
+        .send({
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          password: 'password123',
+          number: '1234567890',
+          dob: '1990-01-02',
+        });
+
+      expect(res.status).to.equal(500);
     });
   });
 
@@ -64,12 +93,12 @@ describe('Auth API', () => {
     it('should send a password reset email', async () => {
       const res = await request(app)
         .post('/auth/reset-password')
-        .send({ email: 'john@example.com' });
+        .send({
+          email: 'john@example.com',
+        });
 
       expect(res.status).to.equal(200);
       expect(res.text).to.equal('Password reset email sent');
     });
   });
-
-  // Additional tests for /reset/:token can be added here
 });

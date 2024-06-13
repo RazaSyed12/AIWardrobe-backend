@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 
 const wardrobeSchema = new mongoose.Schema({
-  wardrobeId: { type: Number, unique: true, required: true },
-  userId: { type: Number, required: true },
+  wardrobeId: { type: mongoose.Schema.Types.ObjectId, auto: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   title: { type: String, required: true },
 });
 

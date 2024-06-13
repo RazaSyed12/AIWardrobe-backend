@@ -1,7 +1,6 @@
 import { body, validationResult } from 'express-validator';
 
 export const validateRegistration = [
-  body('userId').isInt().withMessage('User ID must be an integer'),
   body('name').isString().withMessage('Name must be a string'),
   body('email').isEmail().withMessage('Email must be valid'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),

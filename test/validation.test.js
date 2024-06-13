@@ -2,10 +2,12 @@ import request from 'supertest';
 import { expect } from 'chai';
 import mongoose from 'mongoose';
 import app from '../server.js';
+import User from '../models/User.js';
 
 describe('Validation Middleware', () => {
   before(async () => {
     await mongoose.connect('mongodb://localhost:27017/wardrobe');
+    await User.deleteMany({});
   });
 
   after(async () => {
@@ -17,8 +19,7 @@ describe('Validation Middleware', () => {
       const res = await request(app)
         .post('/auth/register')
         .send({
-          userId: 2,
-          name: 'Jane Doe',
+          name: 'Invalid Email',
           email: 'invalid-email',
           password: 'password123',
           number: '1234567890',
@@ -33,9 +34,8 @@ describe('Validation Middleware', () => {
       const res = await request(app)
         .post('/auth/register')
         .send({
-          userId: 2,
-          name: 'Jane Doe',
-          email: 'jane@example.com',
+          name: 'Short Password',
+          email: 'shortpass@example.com',
           password: 'short',
           number: '1234567890',
           dob: '1990-01-01',
@@ -49,9 +49,8 @@ describe('Validation Middleware', () => {
       const res = await request(app)
         .post('/auth/register')
         .send({
-          userId: 2,
-          name: 'Jane Doe',
-          email: 'jane@example.com',
+          name: 'Invalid Date',
+          email: 'invaliddate@example.com',
           password: 'password123',
           number: '1234567890',
           dob: 'invalid-date',

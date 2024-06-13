@@ -5,15 +5,18 @@ import app from '../server.js';
 import ClothingItem from '../models/ClothingItem.js';
 
 describe('ClothingItem API', () => {
-  let itemId;
+  let itemId, userId;
 
   before(async () => {
     await mongoose.connect('mongodb://localhost:27017/wardrobe');
     await ClothingItem.deleteMany({});
+
+    userId = new mongoose.Types.ObjectId();
+
     const item = await new ClothingItem({
       itemId: 1,
-      wardrobeId: 1,
-      userId: 1,
+      wardrobeId: new mongoose.Types.ObjectId(),
+      userId: new mongoose.Types.ObjectId(userId),
       title: 'Blue T-Shirt',
       category: 'Top',
       type: 'T-Shirt',
@@ -36,8 +39,8 @@ describe('ClothingItem API', () => {
         .post('/clothingItem')
         .send({
           itemId: 2,
-          wardrobeId: 1,
-          userId: 1,
+          wardrobeId: new mongoose.Types.ObjectId(),
+          userId: userId,
           title: 'Red T-Shirt',
           category: 'Top',
           type: 'T-Shirt',
@@ -56,7 +59,7 @@ describe('ClothingItem API', () => {
   describe('GET /clothingItem/:userId', () => {
     it('should get clothing items by user ID', async () => {
       const res = await request(app)
-        .get('/clothingItem/1');
+        .get(`/clothingItem/${userId}`);
 
       expect(res.status).to.equal(200);
       expect(res.body).to.be.an('array');

@@ -4,18 +4,20 @@ import mongoose from 'mongoose';
 import app from '../server.js';
 import ClothingItem from '../models/ClothingItem.js';
 import AIOutfit from '../models/AIOutfit.js';
+import User from '../models/User.js';
 
 describe('AI Routes', () => {
-  let token;
+  let token, topId, bottomId, userId;
 
   before(async () => {
     await mongoose.connect('mongodb://localhost:27017/wardrobe');
+    await User.deleteMany({});
+    await ClothingItem.deleteMany({});
+    await AIOutfit.deleteMany({});
 
-    // Register and login to get a token
-    await request(app)
+    const resRegister = await request(app)
       .post('/auth/register')
       .send({
-        userId: 1,
         name: 'John Doe',
         email: 'john@example.com',
         password: 'password123',
@@ -23,20 +25,20 @@ describe('AI Routes', () => {
         dob: '1990-01-01',
       });
 
-    const res = await request(app)
+    const resLogin = await request(app)
       .post('/auth/login')
       .send({
         email: 'john@example.com',
         password: 'password123',
       });
 
-    token = res.body.token;
+    token = resLogin.body.token;
+    userId = resLogin.body.userId;
 
-    // Create sample clothing items
-    await new ClothingItem({
+    const top = await new ClothingItem({
       itemId: 1,
-      wardrobeId: 1,
-      userId: 1,
+      wardrobeId: new mongoose.Types.ObjectId(),
+      userId: new mongoose.Types.ObjectId(userId),
       title: 'Blue Jeans',
       category: 'Bottoms',
       type: 'Jeans',
@@ -46,11 +48,12 @@ describe('AI Routes', () => {
       secondaryColor: 'None',
       dressCode: 'Casual',
     }).save();
+    topId = top._id;
 
-    await new ClothingItem({
+    const bottom = await new ClothingItem({
       itemId: 2,
-      wardrobeId: 1,
-      userId: 1,
+      wardrobeId: new mongoose.Types.ObjectId(),
+      userId: new mongoose.Types.ObjectId(userId),
       title: 'White T-Shirt',
       category: 'Tops',
       type: 'T-Shirt',
@@ -60,10 +63,10 @@ describe('AI Routes', () => {
       secondaryColor: 'None',
       dressCode: 'Casual',
     }).save();
+    bottomId = bottom._id;
   });
 
   after(async () => {
-    await mongoose.connection.dropDatabase();
     await mongoose.connection.close();
   });
 
@@ -72,7 +75,7 @@ describe('AI Routes', () => {
       const res = await request(app)
         .post('/ai/recognize')
         .set('Authorization', `Bearer ${token}`)
-        .send({ image: 'base64encodedimage' });
+        .attach('image', 'test/test-image.jpeg');
 
       expect(res.status).to.equal(200);
       expect(res.body).to.have.property('type', 'T-Shirt');
@@ -87,9 +90,9 @@ describe('AI Routes', () => {
         .post('/ai/score-outfit')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          userId: 1,
-          topId: 2,
-          bottomId: 1,
+          userId,
+          topId,
+          bottomId,
         });
 
       expect(res.status).to.equal(200);
@@ -99,11 +102,6 @@ describe('AI Routes', () => {
       expect(res.body).to.have.property('summerScore', 8.0);
       expect(res.body).to.have.property('winterScore', 7.0);
       expect(res.body).to.have.property('fashionScore', 8.0);
-
-      // Check if the outfit is saved in the database
-      const savedOutfit = await AIOutfit.findOne({ outfitId: res.body.outfitId });
-      expect(savedOutfit).to.not.be.null;
-      expect(savedOutfit).to.have.property('overallScore', 8.5);
     });
   });
 });

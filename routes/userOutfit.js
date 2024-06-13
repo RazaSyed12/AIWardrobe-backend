@@ -1,6 +1,6 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import UserOutfit from '../models/UserOutfit.js';
-import ClothingItem from '../models/ClothingItem.js';
 
 const router = express.Router();
 
@@ -8,10 +8,9 @@ router.post('/', async (req, res) => {
   try {
     const { userId, topId, bottomId, name } = req.body;
     const newOutfit = new UserOutfit({
-      outfitId: Date.now(),
-      userId,
-      topId,
-      bottomId,
+      userId: new mongoose.Types.ObjectId(userId),
+      topId: new mongoose.Types.ObjectId(topId),
+      bottomId: new mongoose.Types.ObjectId(bottomId),
       name,
     });
 
@@ -25,7 +24,7 @@ router.post('/', async (req, res) => {
 
 router.get('/:userId', async (req, res) => {
   try {
-    const outfits = await UserOutfit.find({ userId: req.params.userId });
+    const outfits = await UserOutfit.find({ userId: new mongoose.Types.ObjectId(req.params.userId) });
     res.status(200).send(outfits);
   } catch (error) {
     console.error('Error fetching user outfits:', error.message);
@@ -35,7 +34,11 @@ router.get('/:userId', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    await UserOutfit.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    await UserOutfit.findByIdAndUpdate(
+      new mongoose.Types.ObjectId(req.params.id),
+      req.body,
+      { new: true }
+    );
     res.status(200).send('User outfit updated successfully');
   } catch (error) {
     console.error('Error updating user outfit:', error.message);
@@ -45,7 +48,7 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    await UserOutfit.findByIdAndDelete(req.params.id);
+    await UserOutfit.findByIdAndDelete(new mongoose.Types.ObjectId(req.params.id));
     res.status(200).send('User outfit deleted successfully');
   } catch (error) {
     console.error('Error deleting user outfit:', error.message);

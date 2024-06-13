@@ -1,25 +1,22 @@
-process.env.TEST_ENV = true;
-
 import request from 'supertest';
 import { expect } from 'chai';
 import mongoose from 'mongoose';
 import app from '../server.js';
 import Wardrobe from '../models/Wardrobe.js';
-import User from '../models/User.js';
 
 describe('Wardrobe API', () => {
+  let userId, wardrobeId;
+
   before(async () => {
     await mongoose.connect('mongodb://localhost:27017/wardrobe');
     await Wardrobe.deleteMany({});
-    await User.deleteMany({});
-    await new User({
-      userId: 1,
-      name: 'John Doe',
-      email: 'john@example.com',
-      password: 'password123',
-      number: '1234567890',
-      dob: '1990-01-01',
+    userId = new mongoose.Types.ObjectId();
+
+    const wardrobe = await new Wardrobe({
+      userId: userId,
+      title: 'Summer Collection',
     }).save();
+    wardrobeId = wardrobe._id;
   });
 
   after(async () => {
@@ -31,9 +28,8 @@ describe('Wardrobe API', () => {
       const res = await request(app)
         .post('/wardrobe')
         .send({
-          wardrobeId: 1,
-          userId: 1,
-          title: 'Summer Wardrobe',
+          userId: userId,
+          title: 'Winter Collection',
         });
 
       expect(res.status).to.equal(201);
@@ -44,11 +40,11 @@ describe('Wardrobe API', () => {
   describe('GET /wardrobe/:userId', () => {
     it('should get wardrobes by user ID', async () => {
       const res = await request(app)
-        .get('/wardrobe/1');
+        .get(`/wardrobe/${userId}`);
 
       expect(res.status).to.equal(200);
       expect(res.body).to.be.an('array');
-      expect(res.body[0]).to.have.property('title', 'Summer Wardrobe');
+      expect(res.body[0]).to.have.property('title', 'Summer Collection');
     });
   });
 });

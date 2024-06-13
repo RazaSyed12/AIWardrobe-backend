@@ -35,18 +35,17 @@ router.post('/recognize', async (req, res) => {
 router.post('/score-outfit', async (req, res) => {
   try {
     const { userId, topId, bottomId } = req.body;
-    const top = await ClothingItem.findById(mongoose.Types.ObjectId(topId));
-    const bottom = await ClothingItem.findById(mongoose.Types.ObjectId(bottomId));
+    const top = await ClothingItem.findById(new mongoose.Types.ObjectId(topId));
+    const bottom = await ClothingItem.findById(new mongoose.Types.ObjectId(bottomId));
 
     // Simulate processing time
     await new Promise((resolve) => setTimeout(resolve, 100));
     const scores = dummyScoreResponse;
 
     const newOutfit = new AIOutfit({
-      outfitId: Date.now(),
-      userId,
-      topId,
-      bottomId,
+      userId: new mongoose.Types.ObjectId(userId),
+      topId: new mongoose.Types.ObjectId(topId),
+      bottomId: new mongoose.Types.ObjectId(bottomId),
       overallScore: scores.overallScore,
       formalScore: scores.formalScore,
       casualScore: scores.casualScore,
