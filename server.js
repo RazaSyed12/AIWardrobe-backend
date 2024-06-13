@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import authRoutes from './routes/auth.js';
 import wardrobeRoutes from './routes/wardrobe.js';
 import clothingItemRoutes from './routes/clothingItem.js';
-import outfitRoutes from './routes/outfit.js';
+import userOutfitRoutes from './routes/userOutfit.js';
 import aiRoutes from './routes/ai.js';
 import imageUpload from './middleware/imageUpload.js';
 import processImage from './middleware/imageProcessing.js';
@@ -16,8 +16,8 @@ app.use(express.json());
 app.use('/auth', authRoutes);
 app.use('/wardrobe', wardrobeRoutes);
 app.use('/clothingItem', clothingItemRoutes);
-app.use('/outfit', outfitRoutes);
 app.use('/ai', aiRoutes);
+app.use('/userOutfit', userOutfitRoutes);
 
 app.post('/upload', imageUpload.single('image'), processImage, (req, res) => {
   res.send('Image uploaded and processed successfully');
