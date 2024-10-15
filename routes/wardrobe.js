@@ -4,26 +4,31 @@ import Wardrobe from '../models/Wardrobe.js';
 
 const router = express.Router();
 
+// Create a new wardrobe with clothes
 router.post('/', async (req, res) => {
   try {
+    const { name, clothes } = req.body;
+
+    // Auto-generate a new ObjectId for userId
+    const userId = new mongoose.Types.ObjectId();
+
+    // Create a new wardrobe object
     const wardrobe = new Wardrobe({
-      userId: new mongoose.Types.ObjectId(req.body.userId),
-      title: req.body.title,
+      userId,  // Use the auto-generated userId
+      name,
+      clothes, // Directly pass the clothes array from the request body
     });
-    await wardrobe.save();
-    res.status(201).send('Wardrobe created successfully');
+
+    // Save the wardrobe to the database
+    const savedWardrobe = await wardrobe.save();
+
+    // Send the created wardrobe in the response
+    res.status(201).json({
+      message: 'Wardrobe created successfully',
+      wardrobe: savedWardrobe  // Return the saved wardrobe object
+    });
   } catch (error) {
     console.error('Error creating wardrobe:', error.message);
-    res.status(400).send(error.message);
-  }
-});
-
-router.get('/:userId', async (req, res) => {
-  try {
-    const wardrobes = await Wardrobe.find({ userId: new mongoose.Types.ObjectId(req.params.userId) });
-    res.status(200).send(wardrobes);
-  } catch (error) {
-    console.error('Error getting wardrobes:', error.message);
     res.status(400).send(error.message);
   }
 });

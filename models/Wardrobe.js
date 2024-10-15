@@ -1,10 +1,18 @@
 import mongoose from 'mongoose';
 
-const wardrobeSchema = new mongoose.Schema({
-  wardrobeId: { type: mongoose.Schema.Types.ObjectId, auto: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  title: { type: String, required: true },
+const ClothesSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  primaryColor: { type: String, required: true },
+  secondaryColor: { type: String },
+  type: { type: String, required: true },
+  imageUrl: { type: String, required: true }
 });
 
-const Wardrobe = mongoose.model('Wardrobe', wardrobeSchema);
+const WardrobeSchema = new mongoose.Schema({
+  userId: { type: mongoose.Types.ObjectId, required: true },
+  name: { type: String, required: true },
+  clothes: [ClothesSchema]
+});
+
+const Wardrobe = mongoose.model('Wardrobe', WardrobeSchema);
 export default Wardrobe;
