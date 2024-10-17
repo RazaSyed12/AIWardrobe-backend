@@ -1,18 +1,27 @@
+// import mongoose from 'mongoose';
+
+// // Define the schema for each clothing item
+// const ClothingItemSchema = new mongoose.Schema({
+//   name: { type: String, required: true },  // Name of the clothing item
+//   primaryColor: { type: String, required: true },  // Main color
+//   secondaryColor: { type: String, default: null },  // Optional secondary color
+//   type: { type: String, required: true },  // Type of clothing (e.g., T-shirt, Jacket)
+//   imageUrl: { type: String, default: null }  // URL of the uploaded image
+// });
+
+// // Export the schema (used in the Collection schema)
+// export default ClothingItemSchema;
+
 import mongoose from 'mongoose';
 
-const clothingItemSchema = new mongoose.Schema({
-  itemId: { type: Number, required: true },
-  wardrobeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Wardrobe', required: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  title: { type: String, required: true },
-  category: { type: String, required: true },
-  type: { type: String, required: true },
-  season: { type: String, required: true },
-  pattern: { type: String, required: true },
-  primaryColor: { type: String, required: true },
-  secondaryColor: { type: String, required: true },
-  dressCode: { type: String, required: true },
+// Define the schema for each clothing item
+const ClothingItemSchema = new mongoose.Schema({
+  name: { type: String, required: true },  // Name of the clothing item
+  primaryColor: { type: String, required: true },  // Main color
+  secondaryColor: { type: String, default: null },  // Optional secondary color
+  type: { type: String, required: true },  // Type of clothing (e.g., T-shirt, Jacket)
+  imageUrl: { type: String, default: null }  // URL of the uploaded image
 });
 
-const ClothingItem = mongoose.model('ClothingItem', clothingItemSchema);
-export default ClothingItem;
+// Export the schema (used in the Collection schema)
+export default ClothingItemSchema;

@@ -1,90 +1,233 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import User from '../models/User.js';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
-import { validateRegistration } from '../middleware/validation.js';
+import express from "express";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
 const router = express.Router();
 
 // Register a new user
-router.post('/register', validateRegistration, async (req, res) => {
+// router.post("/register", async (req, res) => {
+//   try {
+//     const { username, password } = req.body;
+
+//     // Check if the username is already taken
+//     const existingUser = await User.findOne({ username });
+//     if (existingUser) {
+//       return res.status(400).json({ error: "Username already taken" });
+//     }
+
+//     // Create a new user
+//     const hashedPassword = await bcrypt.hash(password, 8);
+//     const user = new User({ username, password: hashedPassword });
+
+//     // Save the user to the database
+//     await user.save();
+
+//     // Generate a JWT token
+//     const token = jwt.sign(
+//       { _id: user._id.toString() },
+//       process.env.JWT_SECRET,
+//       {
+//         expiresIn: "1h", // Token expires in 1 hour
+//       }
+//     );
+
+//     res
+//       .status(201)
+//       .json({ message: "User registered successfully", user, token });
+//   } catch (error) {
+//     console.error("Registration error:", error); // Log the actual error message
+//     res
+//       .status(500)
+//       .json({ error: "Error registering user", details: error.message });
+//   }
+// });
+
+router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, number, dob } = req.body;
-    const newUser = new User({
-      _id: new mongoose.Types.ObjectId(),
-      name,
+    const {
+      username,
       email,
       password,
-      number,
+      firstName,
+      lastName,
+      phone,
       dob,
+      address,
+      profilePicUrl,
+      gender,
+      agreedToTerms,
+    } = req.body;
+
+    // Ensure that user agreed to terms
+    if (!agreedToTerms) {
+      return res
+        .status(400)
+        .json({ error: "You must agree to the terms and conditions." });
+    }
+
+    // Check if the username or email is already taken
+    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    if (existingUser) {
+      return res.status(400).json({ error: "Username or email already taken" });
+    }
+
+    // Log the original password before hashing
+    console.log("Original Password (before hashing):", password);
+
+    // Hash the password before saving the user
+    const hashedPassword = await bcrypt.hash(password, 8);
+
+    // Log the hashed password to ensure it is properly hashed
+    console.log("Hashed Password:", hashedPassword);
+
+    const user = new User({
+      username,
+      email,
+      password: hashedPassword, // Store hashed password
+      firstName,
+      lastName,
+      phone,
+      dob,
+      address,
+      profilePicUrl,
+      gender,
+      agreedToTerms,
     });
 
-    await newUser.save();
-    res.status(201).send('User registered successfully');
+    // Save the user to the database
+    await user.save();
+
+    // Generate a JWT token
+    const token = jwt.sign(
+      { _id: user._id.toString(), role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res
+      .status(201)
+      .json({ message: "User registered successfully", user, token });
   } catch (error) {
-    console.error('Error registering user:', error.message);
-    res.status(500).send('Error registering user');
+    console.error("Registration error:", error.message);
+    res
+      .status(500)
+      .json({ error: "Error registering user", details: error.message });
   }
 });
 
 // Login a user
-router.post('/login', async (req, res) => {
+// router.post("/login", async (req, res) => {
+//   try {
+//     const { usernameOrEmail, password } = req.body;
+
+//     // Find the user by username or email
+//     const user = await User.findOne({
+//       $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
+//     });
+
+//     if (!user) {
+//       console.log("User not found"); // Debugging line
+//       return res
+//         .status(400)
+//         .json({ error: "Invalid username/email or password" });
+//     }
+
+//     console.log("User found:", user); // Debugging line
+
+//     // Compare the provided password with the hashed password
+//     const isMatch = await bcrypt.compare(password, user.password);
+
+//     console.log("Password Match:", isMatch); // Debugging line
+
+//     if (!isMatch) {
+//       return res
+//         .status(400)
+//         .json({ error: "Invalid username/email or password" });
+//     }
+
+//     // Generate a JWT token
+//     const token = jwt.sign(
+//       { _id: user._id.toString(), role: user.role },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "1h" }
+//     );
+
+//     res.status(200).json({
+//       message: "Login successful",
+//       user: {
+//         _id: user._id,
+//         username: user.username,
+//         email: user.email,
+//         firstName: user.firstName,
+//         lastName: user.lastName,
+//         role: user.role,
+//       },
+//       token,
+//     });
+//   } catch (error) {
+//     console.error("Login error:", error.message);
+//     res
+//       .status(500)
+//       .json({ error: "Error logging in user", details: error.message });
+//   }
+// });
+
+router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const { usernameOrEmail, password } = req.body;
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).send('Invalid email or password');
-    }
-
-    const token = jwt.sign({ userId: user._id }, 'your_jwt_secret', { expiresIn: '1h' });
-    res.status(200).send({ token });
-  } catch (error) {
-    console.error('Error logging in user:', error.message);
-    res.status(500).send('Error logging in user');
-  }
-});
-
-// Reset password
-router.post('/reset-password', async (req, res) => {
-  try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).send('User not found');
-    }
-
-    const resetToken = jwt.sign({ userId: user._id }, 'your_jwt_secret', { expiresIn: '1h' });
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
-    await user.save();
-
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'your_email@gmail.com',
-        pass: 'your_email_password',
-      },
+    // Find the user by username or email
+    const user = await User.findOne({
+      $or: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
     });
 
-    const mailOptions = {
-      to: email,
-      from: 'your_email@gmail.com',
-      subject: 'Password Reset',
-      text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
-      Please click on the following link, or paste this into your browser to complete the process:\n\n
-      http://localhost:3000/reset/${resetToken}\n\n
-      If you did not request this, please ignore this email and your password will remain unchanged.\n`,
-    };
+    if (!user) {
+      console.log("User not found"); // Debugging line
+      return res
+        .status(400)
+        .json({ error: "Invalid username/email or password" });
+    }
 
-    await transporter.sendMail(mailOptions);
-    res.status(200).send('Password reset email sent');
+    console.log("User found:", user); // Debugging line
+
+    // Compare the provided password with the hashed password
+    console.log("Provided Password:", password); // Debugging line
+    console.log("Stored Hashed Password:", user.password); // Debugging line
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log("Password Match:", isMatch); // Debugging line
+
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ error: "Invalid username/email or password" });
+    }
+
+    // Generate a JWT token
+    const token = jwt.sign(
+      { _id: user._id.toString(), role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.status(200).json({
+      message: "Login successful",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      },
+      token,
+    });
   } catch (error) {
-    console.error('Error resetting password:', error.message);
-    res.status(500).send('Error resetting password');
+    console.error("Login error:", error.message);
+    res
+      .status(500)
+      .json({ error: "Error logging in user", details: error.message });
   }
 });
 
