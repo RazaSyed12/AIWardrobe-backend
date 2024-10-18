@@ -1,11 +1,40 @@
+import { execFile } from "child_process";
+import path from "path";
 import express from "express";
 import multer from "multer";
-import path from "path";
+import { fileURLToPath } from "url"; // Handle __dirname in ES module
 import Wardrobe from "../models/Wardrobe.js";
-import { execFile } from "child_process";
+import { v4 as uuidv4 } from "uuid"; // For generating unique file names
 
 const router = express.Router();
-const upload = multer({ dest: "uploads/" }); // Directory to save uploaded images
+
+// Get __dirname equivalent in ES module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configure multer storage to keep the correct file extension
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Save to the 'uploads' folder
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname); // Get the original file extension
+    const uniqueName = uuidv4() + ext; // Generate a unique name with the correct extension
+    cb(null, uniqueName); // Save the file with the unique name
+  },
+});
+
+// Set up multer to use the custom storage configuration
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    // Only allow image files
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("File is not an image"), false);
+    }
+    cb(null, true);
+  },
+});
 
 // Route to add a clothing item to a collection (with automatic AI processing)
 router.post(
@@ -52,10 +81,13 @@ router.post(
         path.basename(clothingItem.imageUrl)
       );
 
+      // Build the absolute path to the AI model script
+      const aiModelPath = path.join(__dirname, "..", "ai_model", "ai_model.py");
+
       // Automatically trigger AI processing after upload
       execFile(
         "python",
-        ["../ai_model/ai_model.py", imagePath],
+        [aiModelPath, imagePath],
         async (error, stdout, stderr) => {
           if (error) {
             console.error(`Error executing AI model: ${error.message}`);
@@ -74,12 +106,10 @@ router.post(
 
           await wardrobe.save(); // Save the updated wardrobe
 
-          res
-            .status(201)
-            .json({
-              message: "Clothing item added and processed successfully",
-              wardrobe,
-            });
+          res.status(201).json({
+            message: "Clothing item added and processed successfully",
+            wardrobe,
+          });
         }
       );
     } catch (error) {
@@ -90,30 +120,5 @@ router.post(
     }
   }
 );
-
-// Route to retrieve all clothing items from a collection
-router.get("/collections/:collectionId/clothes", async (req, res) => {
-  try {
-    const { collectionId } = req.params;
-
-    // Find the collection
-    const wardrobe = await Wardrobe.findOne({
-      "collections._id": collectionId,
-    });
-    if (!wardrobe) {
-      return res.status(404).json({ error: "Collection not found." });
-    }
-
-    const collection = wardrobe.collections.id(collectionId);
-    res
-      .status(200)
-      .json({ message: "Collection retrieved successfully", collection });
-  } catch (error) {
-    console.error("Error retrieving collection:", error.message);
-    res
-      .status(500)
-      .json({ error: "An error occurred while retrieving the collection." });
-  }
-});
 
 export default router;

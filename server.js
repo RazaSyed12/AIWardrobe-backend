@@ -2,34 +2,39 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import path from "path";
-import authRoutes from "./routes/auth.js";
 import { fileURLToPath } from "url";
-import authMiddleware from "./middleware/auth.js";
-import collectionRoutes from "./routes/collection.js";
-import clothingItemRoutes from "./routes/clothingItem.js";
+import collectionRoutes from "./routes/collection.js"; // Collection-related routes
+import clothingItemRoutes from "./routes/clothingItem.js"; // Clothing item-related routes
+import authRoutes from "./routes/auth.js"; // Authentication-related routes
 
-dotenv.config(); // Load environment variables from .env file
-
-const app = express();
+// Load environment variables from .env file
+dotenv.config();
 
 // Get __dirname equivalent in ES module
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Initialize express app
+const app = express();
+
 // Connect to MongoDB
-mongoose.connect("mongodb://localhost:27017/wardrobe");
+mongoose
+  .connect(process.env.MONGO_URI || "mongodb://localhost:27017/wardrobe")
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("Failed to connect to MongoDB", err));
 
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-app.use("/auth", authRoutes);
-
-// Serve static files (for uploaded images)
+// Serve static files for uploaded images
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Routes
+// Routes for authentication
+app.use("/auth", authRoutes);
+
+// Routes for collections and clothing items (under /wardrobe)
 app.use("/wardrobe", collectionRoutes);
-app.use("/wardrobe", clothingItemRoutes);
+app.use("/wardrobe", clothingItemRoutes); // Handles clothing item addition to a collection
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
