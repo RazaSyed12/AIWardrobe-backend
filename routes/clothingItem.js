@@ -5,6 +5,7 @@ import multer from "multer";
 import { fileURLToPath } from "url"; // Handle __dirname in ES module
 import Wardrobe from "../models/Wardrobe.js";
 import { v4 as uuidv4 } from "uuid"; // For generating unique file names
+import authMiddleware from "../middleware/auth.js"; // Import the auth middleware
 
 const router = express.Router();
 
@@ -43,12 +44,15 @@ router.post(
   async (req, res) => {
     try {
       const { collectionId } = req.params;
-      const { userId, name } = req.body;
+      const { name } = req.body;
 
-      if (!userId || !name || !req.file) {
+      // Extract the authenticated user's ID from req.user (from the JWT)
+      const userId = req.user._id;
+
+      if (!name || !req.file) {
         return res
           .status(400)
-          .json({ error: "userId, name, and image are required." });
+          .json({ error: "Collection name and image are required." });
       }
 
       // Find the collection in the user's wardrobe

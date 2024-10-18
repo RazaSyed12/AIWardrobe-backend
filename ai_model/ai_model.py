@@ -29,4 +29,4 @@ if __name__ == '__main__':
     primary_color, secondary_color, clothing_type = process_image(image_path)
 
     # Output the result as a comma-separated string
-    print(f"{primary_color},{secondary_color},{clothing_type}")
+    # print(f"{primary_color},{secondary_color},{clothing_type}")

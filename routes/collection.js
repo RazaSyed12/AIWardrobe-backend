@@ -1,21 +1,21 @@
 import express from "express";
-import Wardrobe from "../models/Wardrobe.js";
-import { clothesUpload } from "../middleware/imageUpload.js";
 import multer from "multer";
+import Wardrobe from "../models/Wardrobe.js"; // Assuming you have a Wardrobe model
 
 const router = express.Router();
-const upload = multer(); // For parsing multipart form-data
+const upload = multer();
 
 // Add a new collection to the wardrobe
 router.post("/collections", upload.none(), async (req, res) => {
   try {
-    const { userId, name } = req.body;
+    const { name } = req.body; // No need to send userId
 
-    if (!userId || !name) {
-      return res
-        .status(400)
-        .json({ error: "userId and collection name are required." });
+    if (!name) {
+      return res.status(400).json({ error: "Collection name is required." });
     }
+
+    // Extract the userId from the authenticated user (via JWT middleware)
+    const userId = req.user._id;
 
     // Find the user's wardrobe (assuming one wardrobe per user)
     let wardrobe = await Wardrobe.findOne({ userId });
@@ -46,30 +46,6 @@ router.post("/collections", upload.none(), async (req, res) => {
     res
       .status(500)
       .json({ error: "An error occurred while adding the collection." });
-  }
-});
-
-// Retrieve all collections from the user's wardrobe
-router.get("/collections/:userId", async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    // Fetch the user's wardrobe
-    const wardrobe = await Wardrobe.findOne({ userId });
-
-    if (!wardrobe) {
-      return res.status(404).json({ error: "Wardrobe not found." });
-    }
-
-    res.status(200).json({
-      message: "Wardrobe retrieved successfully",
-      wardrobe,
-    });
-  } catch (error) {
-    console.error("Error retrieving wardrobe:", error.message);
-    res
-      .status(500)
-      .json({ error: "An error occurred while retrieving the wardrobe." });
   }
 });
 

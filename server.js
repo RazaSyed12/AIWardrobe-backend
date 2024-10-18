@@ -3,8 +3,10 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import authMiddleware from "./middleware/auth.js";
 import collectionRoutes from "./routes/collection.js"; // Collection-related routes
 import clothingItemRoutes from "./routes/clothingItem.js"; // Clothing item-related routes
+import wardrobeRoutes from "./routes/wardrobe.js";
 import authRoutes from "./routes/auth.js"; // Authentication-related routes
 
 // Load environment variables from .env file
@@ -33,8 +35,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/auth", authRoutes);
 
 // Routes for collections and clothing items (under /wardrobe)
-app.use("/wardrobe", collectionRoutes);
-app.use("/wardrobe", clothingItemRoutes); // Handles clothing item addition to a collection
+app.use("/wardrobe", authMiddleware, collectionRoutes);
+app.use("/wardrobe", authMiddleware, clothingItemRoutes); // Handles clothing item addition to a collection
+app.use("/wardrobe", wardrobeRoutes);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
