@@ -13,7 +13,7 @@
   "description": "Backend server for wardrobe management and outfit suggestion mobile application.",
   "dependencies": {
     "axios": "^1.7.2",
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "child_process": "^1.0.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

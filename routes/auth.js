@@ -1,5 +1,5 @@
 import express from "express";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
@@ -72,19 +72,11 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "Username or email already taken" });
     }
 
-    // Log the original password before hashing
-    console.log("Original Password (before hashing):", password);
-
-    // Hash the password before saving the user
-    const hashedPassword = await bcrypt.hash(password, 8);
-
-    // Log the hashed password to ensure it is properly hashed
-    console.log("Hashed Password:", hashedPassword);
-
+    // Create a new user object (password hashing will be handled by the pre-save middleware)
     const user = new User({
       username,
       email,
-      password: hashedPassword, // Store hashed password
+      password, // Do NOT hash the password here
       firstName,
       lastName,
       phone,
@@ -95,7 +87,7 @@ router.post("/register", async (req, res) => {
       agreedToTerms,
     });
 
-    // Save the user to the database
+    // Save the user to the database (the pre-save middleware will hash the password)
     await user.save();
 
     // Generate a JWT token
