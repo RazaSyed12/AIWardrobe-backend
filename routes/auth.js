@@ -1,11 +1,42 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import multer from "multer"; // For handling image uploads
+import path from "path";
+import fs from "fs";
 import User from "../models/User.js";
+import { v4 as uuidv4 } from "uuid"; // For generating unique file names
 
 const router = express.Router();
 
-router.post("/register", async (req, res) => {
+// Configure Multer for profile picture uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const tempDir = `uploads/users/temp`; // Temporary folder for users before creating their ID-based folder
+    fs.mkdirSync(tempDir, { recursive: true }); // Ensure the directory exists
+    cb(null, tempDir); // Save file in the temp folder first
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname); // Get the file extension
+    const uniqueName = uuidv4() + ext; // Generate a unique file name with the correct extension
+    cb(null, uniqueName);
+  },
+});
+
+// Multer middleware for profile picture uploads
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    // Only allow image files (jpeg, jpg, png)
+    if (!file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed"), false);
+    }
+    cb(null, true);
+  },
+});
+
+// Route for user registration with profile picture upload
+router.post("/register", upload.single("profilePic"), async (req, res) => {
   try {
     const {
       username,
@@ -16,7 +47,6 @@ router.post("/register", async (req, res) => {
       phone,
       dob,
       address,
-      profilePicUrl,
       gender,
       agreedToTerms,
     } = req.body;
@@ -38,19 +68,36 @@ router.post("/register", async (req, res) => {
     const user = new User({
       username,
       email,
-      password, // Do NOT hash the password here
+      password, // The password will be hashed by the User model's pre-save middleware
       firstName,
       lastName,
       phone,
       dob,
       address,
-      profilePicUrl,
       gender,
       agreedToTerms,
     });
 
-    // Save the user to the database (the pre-save middleware will hash the password)
+    // Save the user to the database (to get the user's ID)
     await user.save();
+
+    // Handle profile picture upload (if present)
+    let profilePicUrl = null;
+    if (req.file) {
+      const userDir = `uploads/users/${user._id}/profilephoto`; // Directory based on the user's ID
+      fs.mkdirSync(userDir, { recursive: true }); // Ensure the user-specific directory exists
+
+      // Move the file from the temp folder to the user-specific folder
+      const ext = path.extname(req.file.originalname);
+      const newFilename = `profile${ext}`; // Save file as "profile.jpg" or "profile.png"
+      const newPath = path.join(userDir, newFilename);
+      fs.renameSync(req.file.path, newPath); // Move the file
+
+      // Set the profilePicUrl for the user
+      profilePicUrl = `/uploads/users/${user._id}/profilephoto/${newFilename}`;
+      user.profilePicUrl = profilePicUrl; // Update user's profilePicUrl
+      await user.save(); // Save the updated user with the profilePicUrl
+    }
 
     // Generate a JWT token
     const token = jwt.sign(
@@ -59,9 +106,18 @@ router.post("/register", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res
-      .status(201)
-      .json({ message: "User registered successfully", user, token });
+    // Return the user and token
+    res.status(201).json({
+      message: "User registered successfully",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        profilePicUrl: user.profilePicUrl,
+        role: user.role,
+      },
+      token,
+    });
   } catch (error) {
     console.error("Registration error:", error.message);
     res

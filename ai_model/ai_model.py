@@ -24,9 +24,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
     image_path = sys.argv[1]  # First argument is the image path
-
     # Simulate AI processing
     primary_color, secondary_color, clothing_type = process_image(image_path)
 
     # Output the result as a comma-separated string
-    # print(f"{primary_color},{secondary_color},{clothing_type}")
+    print(f"{primary_color},{secondary_color},{clothing_type}")
