@@ -8,7 +8,7 @@ const upload = multer();
 // Add a new collection to the wardrobe
 router.post("/collections", upload.none(), async (req, res) => {
   try {
-    const { name } = req.body; // No need to send userId
+    const { name } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: "Collection name is required." });
