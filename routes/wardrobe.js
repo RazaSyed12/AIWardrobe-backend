@@ -12,18 +12,21 @@ router.get("/", async (req, res) => {
     const wardrobe = await Wardrobe.findOne({ userId });
 
     if (!wardrobe) {
-      return res.status(404).json({ error: "Wardrobe not found." });
+      return res.status(200).json({
+        message: "Wardrobe retrieved successfully",
+        collections: [], // Return an empty array if wardrobe is not found
+      });
     }
 
     res.status(200).json({
       message: "Wardrobe retrieved successfully",
-      wardrobe,
+      collections: wardrobe.collections || [], // Return the collections, or an empty array if no collections are present
     });
   } catch (error) {
     console.error("Error retrieving wardrobe:", error.message);
-    res
-      .status(500)
-      .json({ error: "An error occurred while retrieving the wardrobe." });
+    res.status(500).json({
+      error: "An error occurred while retrieving the wardrobe.",
+    });
   }
 });
 
