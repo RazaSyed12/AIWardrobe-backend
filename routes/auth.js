@@ -5,6 +5,7 @@ import multer from "multer"; // For handling image uploads
 import path from "path";
 import fs from "fs";
 import User from "../models/User.js";
+import Wardrobe from "../models/Wardrobe.js"; // Assuming you have a Wardrobe model
 import { v4 as uuidv4 } from "uuid"; // For generating unique file names
 
 const router = express.Router();
@@ -93,6 +94,15 @@ router.post("/register", upload.single("profilePic"), async (req, res) => {
 
     // Save the user to the database (to get the user's ID)
     await user.save();
+
+    // Create a wardrobe for the newly registered user
+    const wardrobe = new Wardrobe({
+      userId: user._id, // Associate the wardrobe with the user's ID
+      collections: [], // Initialize with an empty collections array
+    });
+
+    // Save the wardrobe to the database
+    await wardrobe.save();
 
     // Handle profile picture upload (if present)
     let profilePicUrl = null;
