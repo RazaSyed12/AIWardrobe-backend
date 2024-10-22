@@ -51,17 +51,30 @@ router.post("/register", upload.single("profilePic"), async (req, res) => {
       agreedToTerms,
     } = req.body;
 
-    // Ensure that user agreed to terms
-    if (!agreedToTerms) {
+    // Ensure that firstName, lastName, and password are provided
+    if (!firstName || !lastName || !password) {
       return res
         .status(400)
-        .json({ error: "You must agree to the terms and conditions." });
+        .json({ error: "First name, last name, and password are required." });
     }
 
-    // Check if the username or email is already taken
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
-    if (existingUser) {
-      return res.status(400).json({ error: "Username or email already taken" });
+    // Ensure email is provided (username is optional)
+    if (!email) {
+      return res.status(400).json({ error: "Email is required." });
+    }
+
+    // Check if the email is already taken
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({ error: "Email already taken" });
+    }
+
+    // Check if the username is already taken, if provided
+    if (username) {
+      const existingUsername = await User.findOne({ username });
+      if (existingUsername) {
+        return res.status(400).json({ error: "Username already taken" });
+      }
     }
 
     // Create a new user object (password hashing will be handled by the pre-save middleware)

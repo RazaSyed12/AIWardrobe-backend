@@ -1,72 +1,66 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 // Define the User schema
 const userSchema = new mongoose.Schema(
   {
-    username: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-      lowercase: true,
-    },
-    password: {
-      type: String,
-      required: true,
-      minlength: 6,
-    },
     firstName: {
       type: String,
+      required: true, // Mandatory field
       trim: true,
-      default: null,
     },
     lastName: {
       type: String,
+      required: true, // Mandatory field
       trim: true,
-      default: null,
+    },
+    username: {
+      type: String,
+      trim: true,
+      default: null, // Optional, either username or email must be provided
+    },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      required: true, // Email is required
+      unique: true, // Keep email unique
+    },
+    password: {
+      type: String,
+      required: true, // Mandatory field
+      minlength: 6,
     },
     phone: {
       type: String,
-      default: null,
-      validate: {
-        validator: function (v) {
-          return /\+?\d{10,14}/.test(v);
-        },
-        message: (props) => `${props.value} is not a valid phone number!`,
-      },
+      default: null, // Optional field
     },
     dob: {
       type: Date,
-      default: null,
+      default: null, // Optional field
     },
     address: {
       type: String,
-      default: null,
+      default: null, // Optional field
     },
     profilePicUrl: {
       type: String,
-      default: null,
+      default: null, // Optional field
     },
     gender: {
       type: String,
       enum: ["Male", "Female", "Other", "Prefer not to say"],
-      default: "Prefer not to say",
+      default: "Prefer not to say", // Optional field
     },
     role: {
       type: String,
       enum: ["user", "admin"],
-      default: "user",
+      default: "user", // Optional field, default to "user"
     },
     agreedToTerms: {
       type: Boolean,
-      required: true,
+      default: false, // Optional field
     },
   },
   {
