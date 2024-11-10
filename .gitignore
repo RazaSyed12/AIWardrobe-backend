@@ -45,3 +45,6 @@ target/
 .project
 .classpath
 .settings/
+
+# uploads
+uploads/

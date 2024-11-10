@@ -97,7 +97,7 @@ router.post(
 
       // Automatically trigger AI processing after upload
       execFile(
-        "python",
+        "python3",
         [aiModelPath, imagePath],
         async (error, stdout, stderr) => {
           if (error) {
