@@ -10,13 +10,24 @@ def process_image(image_path):
     primary_colors = ['Red', 'Blue', 'Green', 'Yellow', 'Black']
     secondary_colors = ['White', 'Gray', 'None']  # None means no secondary color
     types = ['T-Shirt', 'Sweater', 'Jacket', 'Jeans', 'Skirt']
+    isTop = ['true','false']
+    textures = ['Smooth', 'Rough', 'Soft', 'Stiff']
+    fabrics = ['Cotton', 'Wool', 'Polyester', 'Silk']
+    shapes = ['Slim Fit', 'Regular Fit', 'Loose Fit']
+    patterns = ['Solid', 'Striped', 'Checked', 'Polka Dot']
+    styles = ['Casual', 'Formal', 'Sporty', 'Vintage']
 
     primary_color = choice(primary_colors)
     secondary_color = choice(secondary_colors)
     clothing_type = choice(types)
+    texture = choice(textures)
+    fabric = choice(fabrics)
+    shape = choice(shapes)
+    pattern = choice(patterns)
+    style = choice(styles)
 
     # Return the generated attributes
-    return primary_color, secondary_color, clothing_type
+    return primary_color, secondary_color, clothing_type, texture, fabric, shape, pattern, style
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -25,7 +36,7 @@ if __name__ == '__main__':
 
     image_path = sys.argv[1]  # First argument is the image path
     # Simulate AI processing
-    primary_color, secondary_color, clothing_type = process_image(image_path)
+    primary_color, secondary_color, clothing_type, texture, fabric, shape, pattern, style = process_image(image_path)
 
     # Output the result as a comma-separated string
-    print(f"{primary_color},{secondary_color},{clothing_type}")
+    print(f"{primary_color},{secondary_color},{clothing_type},{texture},{fabric},{shape},{pattern},{style}")

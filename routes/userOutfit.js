@@ -1,58 +1,279 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import UserOutfit from '../models/UserOutfit.js';
+// import express from "express";
+// import AIOutfit from "../models/AIOutfit.js";
+// import authMiddleware from "../middleware/auth.js"; // Import the auth middleware
+
+// const router = express.Router();
+
+// // Apply auth middleware to all routes
+// router.use(authMiddleware);
+
+// // Fetch Outfits API
+// router.get("/fetch-outfits", async (req, res) => {
+//   const userId = req.user._id.toString();
+//   const {
+//     category = "overallScore",
+//     preference,
+//     page = 1,
+//     limit = 10,
+//   } = req.query;
+
+//   try {
+//     // Validate query parameters
+//     const validCategories = [
+//       "overallScore",
+//       "formalScore",
+//       "casualScore",
+//       "summerScore",
+//       "winterScore",
+//       "fashionScore",
+//     ];
+//     const validPreferences = [
+//       "formal",
+//       "casual",
+//       "summer",
+//       "winter",
+//       "fashion",
+//     ];
+
+//     if (!validCategories.includes(category)) {
+//       return res.status(400).json({ error: "Invalid category parameter." });
+//     }
+
+//     if (preference && !validPreferences.includes(preference)) {
+//       return res.status(400).json({ error: "Invalid preference parameter." });
+//     }
+
+//     // Calculate pagination
+//     const skip = (parseInt(page) - 1) * parseInt(limit);
+
+//     // Fetch outfits and populate image URLs
+//     let outfits = await AIOutfit.find({ userId })
+//       .sort({ [category]: -1 })
+//       .populate("topId", "imageUrl name")
+//       .populate("bottomId", "imageUrl name")
+//       .skip(skip)
+//       .limit(parseInt(limit));
+
+//     // Filter by preference if provided
+//     if (preference) {
+//       outfits = outfits.filter((outfit) => outfit[`${preference}Score`] > 0);
+//     }
+
+//     // Format the response
+//     const formattedOutfits = outfits.map((outfit) => ({
+//       outfitId: outfit._id,
+//       topImageUrl: outfit.topId?.imageUrl || "Top item not found",
+//       topName: outfit.topId?.name || "Unknown",
+//       bottomImageUrl: outfit.bottomId?.imageUrl || "Bottom item not found",
+//       bottomName: outfit.bottomId?.name || "Unknown",
+//       overallScore: outfit.overallScore,
+//       formalScore: outfit.formalScore,
+//       casualScore: outfit.casualScore,
+//       date: outfit.date,
+//     }));
+
+//     res.status(200).json({ outfits: formattedOutfits });
+//   } catch (error) {
+//     console.error("Error fetching outfits:", error.message);
+//     res.status(500).json({ error: "Failed to fetch outfits." });
+//   }
+// });
+
+// export default router;
+
+import express from "express";
+import AIOutfit from "../models/AIOutfit.js";
+import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.post('/', async (req, res) => {
+// Apply auth middleware
+router.use(authMiddleware);
+
+/**
+ * ADD USER OUTFIT
+ * POST /outfits/user-outfits
+ */
+router.post("/user-outfits", async (req, res) => {
   try {
-    const { userId, topId, bottomId, name } = req.body;
-    const newOutfit = new UserOutfit({
-      userId: new mongoose.Types.ObjectId(userId),
-      topId: new mongoose.Types.ObjectId(topId),
-      bottomId: new mongoose.Types.ObjectId(bottomId),
-      name,
+    const userId = req.user._id; // or req.user._id.toString()
+    const { topId, bottomId } = req.body;
+
+    if (!topId || !bottomId) {
+      return res
+        .status(400)
+        .json({ error: "topId and bottomId are required." });
+    }
+
+    // Optional: Validate topId and bottomId belong to user's clothes, etc.
+
+    // Create a new outfit with minimal or default scores
+    const newOutfit = new AIOutfit({
+      userId,
+      topId,
+      bottomId,
+      overallScore: 0, // or run your scoring logic
+      formalScore: 0,
+      casualScore: 0,
+      date: new Date(),
     });
 
-    await newOutfit.save();
-    res.status(201).send('User outfit created successfully');
+    const savedOutfit = await newOutfit.save();
+    res.status(201).json({
+      message: "User outfit created successfully.",
+      outfit: {
+        outfitId: savedOutfit._id,
+        topId: savedOutfit.topId,
+        bottomId: savedOutfit.bottomId,
+        overallScore: savedOutfit.overallScore,
+        formalScore: savedOutfit.formalScore,
+        casualScore: savedOutfit.casualScore,
+      },
+    });
   } catch (error) {
-    console.error('Error creating user outfit:', error.message);
-    res.status(500).send('Error creating user outfit');
+    console.error("Error adding user outfit:", error.message);
+    res.status(500).json({ error: "Failed to create user outfit." });
   }
 });
 
-router.get('/:userId', async (req, res) => {
+/**
+ * EDIT USER OUTFIT
+ * PUT /outfits/user-outfits/:outfitId
+ */
+router.put("/user-outfits/:outfitId", async (req, res) => {
   try {
-    const outfits = await UserOutfit.find({ userId: new mongoose.Types.ObjectId(req.params.userId) });
-    res.status(200).send(outfits);
+    const { outfitId } = req.params;
+    const userId = req.user._id;
+    const { topId, bottomId, overallScore, formalScore, casualScore } =
+      req.body;
+
+    const outfit = await AIOutfit.findOne({ _id: outfitId, userId });
+    if (!outfit) {
+      return res
+        .status(404)
+        .json({ error: "Outfit not found or does not belong to this user." });
+    }
+
+    // Update fields if provided
+    if (topId !== undefined) outfit.topId = topId;
+    if (bottomId !== undefined) outfit.bottomId = bottomId;
+    if (overallScore !== undefined) outfit.overallScore = overallScore;
+    if (formalScore !== undefined) outfit.formalScore = formalScore;
+    if (casualScore !== undefined) outfit.casualScore = casualScore;
+
+    await outfit.save();
+    res.status(200).json({
+      message: "User outfit updated successfully.",
+      outfit,
+    });
   } catch (error) {
-    console.error('Error fetching user outfits:', error.message);
-    res.status(500).send('Error fetching user outfits');
+    console.error("Error updating user outfit:", error.message);
+    res.status(500).json({ error: "Failed to update user outfit." });
   }
 });
 
-router.put('/:id', async (req, res) => {
+/**
+ * DELETE USER OUTFIT
+ * DELETE /outfits/user-outfits/:outfitId
+ */
+router.delete("/user-outfits/:outfitId", async (req, res) => {
   try {
-    await UserOutfit.findByIdAndUpdate(
-      new mongoose.Types.ObjectId(req.params.id),
-      req.body,
-      { new: true }
-    );
-    res.status(200).send('User outfit updated successfully');
+    const { outfitId } = req.params;
+    const userId = req.user._id;
+
+    const deletedOutfit = await AIOutfit.findOneAndDelete({
+      _id: outfitId,
+      userId,
+    });
+    if (!deletedOutfit) {
+      return res
+        .status(404)
+        .json({ error: "Outfit not found or does not belong to this user." });
+    }
+
+    res.status(200).json({
+      message: "User outfit deleted successfully.",
+      outfitId,
+    });
   } catch (error) {
-    console.error('Error updating user outfit:', error.message);
-    res.status(500).send('Error updating user outfit');
+    console.error("Error deleting user outfit:", error.message);
+    res.status(500).json({ error: "Failed to delete user outfit." });
   }
 });
 
-router.delete('/:id', async (req, res) => {
+/**
+ * FETCH OUTFITS
+ * GET /outfits/fetch-outfits?category=overallScore&preference=formal&page=1&limit=10
+ */
+router.get("/fetch-outfits", async (req, res) => {
   try {
-    await UserOutfit.findByIdAndDelete(new mongoose.Types.ObjectId(req.params.id));
-    res.status(200).send('User outfit deleted successfully');
+    const userId = req.user._id;
+    const {
+      category = "overallScore",
+      preference, // optional
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    // Validate query parameters
+    const validCategories = [
+      "overallScore",
+      "formalScore",
+      "casualScore",
+      // "summerScore",
+      // "winterScore",
+      // "fashionScore",
+      // Add additional categories if needed
+    ];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ error: "Invalid category parameter." });
+    }
+
+    // (Optional) Validate preference if you use that
+    const validPreferences = [
+      "formal",
+      "casual" /* "summer", "winter", etc. */,
+    ];
+    if (preference && !validPreferences.includes(preference)) {
+      return res.status(400).json({ error: "Invalid preference parameter." });
+    }
+
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Fetch outfits from DB, sorted by category
+    let outfits = await AIOutfit.find({ userId })
+      .sort({ [category]: -1 })
+      .populate("topId", "imageUrl name") // Ensure topId references ClothingItem
+      .populate("bottomId", "imageUrl name")
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Filter by preference (only if the score > 0, or your logic)
+    if (preference) {
+      outfits = outfits.filter((outfit) => {
+        const pScore = outfit[`${preference}Score`];
+        return pScore && pScore > 0;
+      });
+    }
+
+    // Format the response
+    const formattedOutfits = outfits.map((outfit) => ({
+      outfitId: outfit._id,
+      topImageUrl: outfit.topId?.imageUrl || "Top item not found",
+      topName: outfit.topId?.name || "Unknown",
+      bottomImageUrl: outfit.bottomId?.imageUrl || "Bottom item not found",
+      bottomName: outfit.bottomId?.name || "Unknown",
+      overallScore: outfit.overallScore,
+      formalScore: outfit.formalScore,
+      casualScore: outfit.casualScore,
+      date: outfit.date,
+    }));
+
+    res.status(200).json({ outfits: formattedOutfits });
   } catch (error) {
-    console.error('Error deleting user outfit:', error.message);
-    res.status(500).send('Error deleting user outfit');
+    console.error("Error fetching outfits:", error.message);
+    res.status(500).json({ error: "Failed to fetch outfits." });
   }
 });
 
