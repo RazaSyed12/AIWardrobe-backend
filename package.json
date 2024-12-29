@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "mocha --timeout 10000",
-    "start dev": "nodemon server.js"
+    "start dev": "nodemon server.js",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
@@ -34,7 +35,7 @@
     "chai": "^5.1.1",
     "mocha": "^10.4.0",
     "nodemailer-mock": "^2.0.6",
-    "nodemon": "^3.1.7",
+    "nodemon": "^3.1.9",
     "sinon": "^18.0.0",
     "supertest": "^7.0.0"
   }

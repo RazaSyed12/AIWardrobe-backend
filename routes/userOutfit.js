@@ -1,88 +1,5 @@
-// import express from "express";
-// import AIOutfit from "../models/AIOutfit.js";
-// import authMiddleware from "../middleware/auth.js"; // Import the auth middleware
-
-// const router = express.Router();
-
-// // Apply auth middleware to all routes
-// router.use(authMiddleware);
-
-// // Fetch Outfits API
-// router.get("/fetch-outfits", async (req, res) => {
-//   const userId = req.user._id.toString();
-//   const {
-//     category = "overallScore",
-//     preference,
-//     page = 1,
-//     limit = 10,
-//   } = req.query;
-
-//   try {
-//     // Validate query parameters
-//     const validCategories = [
-//       "overallScore",
-//       "formalScore",
-//       "casualScore",
-//       "summerScore",
-//       "winterScore",
-//       "fashionScore",
-//     ];
-//     const validPreferences = [
-//       "formal",
-//       "casual",
-//       "summer",
-//       "winter",
-//       "fashion",
-//     ];
-
-//     if (!validCategories.includes(category)) {
-//       return res.status(400).json({ error: "Invalid category parameter." });
-//     }
-
-//     if (preference && !validPreferences.includes(preference)) {
-//       return res.status(400).json({ error: "Invalid preference parameter." });
-//     }
-
-//     // Calculate pagination
-//     const skip = (parseInt(page) - 1) * parseInt(limit);
-
-//     // Fetch outfits and populate image URLs
-//     let outfits = await AIOutfit.find({ userId })
-//       .sort({ [category]: -1 })
-//       .populate("topId", "imageUrl name")
-//       .populate("bottomId", "imageUrl name")
-//       .skip(skip)
-//       .limit(parseInt(limit));
-
-//     // Filter by preference if provided
-//     if (preference) {
-//       outfits = outfits.filter((outfit) => outfit[`${preference}Score`] > 0);
-//     }
-
-//     // Format the response
-//     const formattedOutfits = outfits.map((outfit) => ({
-//       outfitId: outfit._id,
-//       topImageUrl: outfit.topId?.imageUrl || "Top item not found",
-//       topName: outfit.topId?.name || "Unknown",
-//       bottomImageUrl: outfit.bottomId?.imageUrl || "Bottom item not found",
-//       bottomName: outfit.bottomId?.name || "Unknown",
-//       overallScore: outfit.overallScore,
-//       formalScore: outfit.formalScore,
-//       casualScore: outfit.casualScore,
-//       date: outfit.date,
-//     }));
-
-//     res.status(200).json({ outfits: formattedOutfits });
-//   } catch (error) {
-//     console.error("Error fetching outfits:", error.message);
-//     res.status(500).json({ error: "Failed to fetch outfits." });
-//   }
-// });
-
-// export default router;
-
 import express from "express";
-import AIOutfit from "../models/AIOutfit.js";
+import UserOutfit from "../models/UserOutfit.js";
 import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
@@ -108,13 +25,11 @@ router.post("/user-outfits", async (req, res) => {
     // Optional: Validate topId and bottomId belong to user's clothes, etc.
 
     // Create a new outfit with minimal or default scores
-    const newOutfit = new AIOutfit({
+    const newOutfit = new UserOutfit({
       userId,
       topId,
       bottomId,
-      overallScore: 0, // or run your scoring logic
-      formalScore: 0,
-      casualScore: 0,
+      name: "User Outfit",
       date: new Date(),
     });
 
@@ -125,9 +40,6 @@ router.post("/user-outfits", async (req, res) => {
         outfitId: savedOutfit._id,
         topId: savedOutfit.topId,
         bottomId: savedOutfit.bottomId,
-        overallScore: savedOutfit.overallScore,
-        formalScore: savedOutfit.formalScore,
-        casualScore: savedOutfit.casualScore,
       },
     });
   } catch (error) {
@@ -260,17 +172,15 @@ router.get("/fetch-outfits", async (req, res) => {
     // Format the response
     const formattedOutfits = outfits.map((outfit) => ({
       outfitId: outfit._id,
-      topImageUrl: outfit.topId?.imageUrl || "Top item not found",
-      topName: outfit.topId?.name || "Unknown",
-      bottomImageUrl: outfit.bottomId?.imageUrl || "Bottom item not found",
-      bottomName: outfit.bottomId?.name || "Unknown",
+      topId: outfit.topId,
+      bottomId: outfit.bottomId,
       overallScore: outfit.overallScore,
       formalScore: outfit.formalScore,
       casualScore: outfit.casualScore,
       date: outfit.date,
     }));
 
-    res.status(200).json({ outfits: formattedOutfits });
+    res.status(200).json(formattedOutfits);
   } catch (error) {
     console.error("Error fetching outfits:", error.message);
     res.status(500).json({ error: "Failed to fetch outfits." });
