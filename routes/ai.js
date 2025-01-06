@@ -63,6 +63,9 @@ function calculateOutfitScores(top, bottom, preference) {
 // ------------------ ROUTES ------------------
 
 // POST /api/ai/generate-outfits
+// Sample GET request:
+// GET /api/ai/generate-outfits?preferences[occasion]=formal&preferences[collectionId]=123&preferences[clothingItemId]=456&preferences[color]=blue
+
 router.get("/generate-outfits", async (req, res) => {
   const { preferences = {} } = req.query;
   const userId = req.user._id;
@@ -102,11 +105,13 @@ router.get("/generate-outfits", async (req, res) => {
       .sort({ [sortField]: -1 })
       .populate({
         path: "topId",
-        select: "imageUrl name type primaryColor secondaryColor collectionId",
+        select:
+          "imageUrl name type primaryColor secondaryColor collectionId texture fabric shape pattern style",
       })
       .populate({
         path: "bottomId",
-        select: "imageUrl name type primaryColor secondaryColor collectionId",
+        select:
+          "imageUrl name type primaryColor secondaryColor collectionId texture fabric shape pattern style",
       });
 
     if (!outfit) {
@@ -119,8 +124,9 @@ router.get("/generate-outfits", async (req, res) => {
     if (preferences.color) {
       const hasColor = (item) => {
         return (
-          item.primaryColor === preferences.color ||
-          item.secondaryColor === preferences.color
+          item.primaryColor?.toLowerCase() ===
+            preferences.color.toLowerCase() ||
+          item.secondaryColor?.toLowerCase() === preferences.color.toLowerCase()
         );
       };
 
@@ -131,13 +137,13 @@ router.get("/generate-outfits", async (req, res) => {
       }
     }
 
-    // Format the response
+    // Format outfit for response
     const formattedOutfit = {
       outfitId: outfit._id,
       top: {
         id: outfit.topId._id,
-        imageUrl: outfit.topId.imageUrl,
         name: outfit.topId.name,
+        imageUrl: outfit.topId.imageUrl,
         type: outfit.topId.type,
         primaryColor: outfit.topId.primaryColor,
         secondaryColor: outfit.topId.secondaryColor,
@@ -145,8 +151,8 @@ router.get("/generate-outfits", async (req, res) => {
       },
       bottom: {
         id: outfit.bottomId._id,
-        imageUrl: outfit.bottomId.imageUrl,
         name: outfit.bottomId.name,
+        imageUrl: outfit.bottomId.imageUrl,
         type: outfit.bottomId.type,
         primaryColor: outfit.bottomId.primaryColor,
         secondaryColor: outfit.bottomId.secondaryColor,

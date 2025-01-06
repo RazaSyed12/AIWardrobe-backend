@@ -69,6 +69,7 @@ import wardrobeRoutes from "./routes/wardrobe.js";
 import authRoutes from "./routes/auth.js"; // your Auth logic
 import userOutfitRoutes from "./routes/userOutfit.js"; // user outfit
 import aiRoutes from "./routes/ai.js"; // optional AI routes
+import outfitSchedulerRoutes from "./routes/outfitScheduler.js";
 
 dotenv.config();
 
@@ -104,6 +105,9 @@ app.use("/outfits", authMiddleware, userOutfitRoutes);
 
 // (Optional) AI routes if needed
 app.use("/api/ai", authMiddleware, aiRoutes);
+
+// Outfit Scheduler routes
+app.use("/api/outfit-scheduler", authMiddleware, outfitSchedulerRoutes);
 
 // Global error handling
 app.use((err, req, res, next) => {
