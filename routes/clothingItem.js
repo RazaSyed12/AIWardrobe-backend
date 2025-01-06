@@ -464,6 +464,7 @@ router.post(
         shape: null,
         pattern: null,
         style: null,
+        isTop: null,
       };
 
       // Insert into the collection
@@ -509,6 +510,7 @@ router.post(
             shape,
             pattern,
             style,
+            isTop,
           ] = stdout.trim().split(",");
 
           if (!primaryColor || !type) {
@@ -525,6 +527,7 @@ router.post(
           clothingItem.shape = shape || null;
           clothingItem.pattern = pattern || null; // or 'part'
           clothingItem.style = style || null;
+          clothingItem.isTop = isTop || null;
           await wardrobe.save();
 
           // Now re-classify all items to generate outfits
@@ -551,6 +554,122 @@ router.post(
       res
         .status(500)
         .json({ error: "An error occurred while adding the clothing item." });
+    }
+  }
+);
+
+/**
+ * DELETE CLOTHING ITEM
+ * DELETE /wardrobe/collections/:collectionId/clothes/:clothingItemId
+ */
+router.delete(
+  "/collections/:collectionId/clothes/:clothingItemId",
+  async (req, res) => {
+    try {
+      const { collectionId, clothingItemId } = req.params;
+      const userId = req.user._id;
+
+      const wardrobe = await Wardrobe.findOne({
+        userId,
+        "collections._id": collectionId,
+      });
+      if (!wardrobe) {
+        return res.status(404).json({
+          error: "Collection not found or does not belong to this user.",
+        });
+      }
+
+      const collection = wardrobe.collections.id(collectionId);
+      if (!collection) {
+        return res.status(404).json({ error: "Collection not found." });
+      }
+
+      // Filter out the item
+      collection.clothes = collection.clothes.filter(
+        (item) => item._id.toString() !== clothingItemId
+      );
+
+      const updatedWardrobe = await wardrobe.save();
+      res.status(200).json({
+        message: "Clothing item deleted successfully",
+        wardrobe: updatedWardrobe,
+      });
+    } catch (error) {
+      console.error("Error deleting clothing item:", error.message);
+      res.status(500).json({
+        error: "An error occurred while deleting the clothing item.",
+        details: error.message,
+      });
+    }
+  }
+);
+
+/**
+ * EDIT CLOTHING ITEM
+ * PUT /wardrobe/collections/:collectionId/clothes/:clothingItemId
+ */
+router.put(
+  "/collections/:collectionId/clothes/:clothingItemId",
+  upload.none(), // If not replacing the image, just use .none()
+  async (req, res) => {
+    try {
+      const { collectionId, clothingItemId } = req.params;
+      const {
+        name,
+        primaryColor,
+        secondaryColor,
+        type,
+        texture,
+        fabric,
+        shape,
+        pattern,
+        style,
+      } = req.body;
+      const userId = req.user._id;
+
+      const wardrobe = await Wardrobe.findOne({
+        userId,
+        "collections._id": collectionId,
+      });
+      if (!wardrobe) {
+        return res.status(404).json({
+          error: "Collection not found or does not belong to this user.",
+        });
+      }
+
+      const collection = wardrobe.collections.id(collectionId);
+      if (!collection) {
+        return res.status(404).json({ error: "Collection not found." });
+      }
+
+      const clothingItem = collection.clothes.id(clothingItemId);
+      if (!clothingItem) {
+        return res.status(404).json({ error: "Clothing item not found." });
+      }
+
+      // Update only the fields provided
+      if (name !== undefined) clothingItem.name = name;
+      if (primaryColor !== undefined) clothingItem.primaryColor = primaryColor;
+      if (secondaryColor !== undefined)
+        clothingItem.secondaryColor = secondaryColor;
+      if (type !== undefined) clothingItem.type = type;
+      if (texture !== undefined) clothingItem.texture = texture;
+      if (fabric !== undefined) clothingItem.fabric = fabric;
+      if (shape !== undefined) clothingItem.shape = shape;
+      if (pattern !== undefined) clothingItem.pattern = pattern;
+      if (style !== undefined) clothingItem.style = style;
+
+      const updatedWardrobe = await wardrobe.save();
+      res.status(200).json({
+        message: "Clothing item updated successfully",
+        wardrobe: updatedWardrobe,
+      });
+    } catch (error) {
+      console.error("Error updating clothing item:", error.message);
+      res.status(500).json({
+        error: "An error occurred while updating the clothing item.",
+        details: error.message,
+      });
     }
   }
 );

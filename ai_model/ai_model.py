@@ -16,6 +16,7 @@ def process_image(image_path):
     shapes = ['Slim Fit', 'Regular Fit', 'Loose Fit']
     patterns = ['Solid', 'Striped', 'Checked', 'Polka Dot']
     styles = ['Casual', 'Formal', 'Sporty', 'Vintage']
+    isTop = ['true','false']
 
     primary_color = choice(primary_colors)
     secondary_color = choice(secondary_colors)
@@ -25,9 +26,10 @@ def process_image(image_path):
     shape = choice(shapes)
     pattern = choice(patterns)
     style = choice(styles)
+    isTop = choice(isTop)
 
     # Return the generated attributes
-    return primary_color, secondary_color, clothing_type, texture, fabric, shape, pattern, style
+    return primary_color, secondary_color, clothing_type, texture, fabric, shape, pattern, style, isTop
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -35,8 +37,9 @@ if __name__ == '__main__':
         sys.exit(1)
 
     image_path = sys.argv[1]  # First argument is the image path
+    # print("Image Path:", image_path)
     # Simulate AI processing
-    primary_color, secondary_color, clothing_type, texture, fabric, shape, pattern, style = process_image(image_path)
+    primary_color, secondary_color, clothing_type, texture, fabric, shape, pattern, style, isTop = process_image(image_path)
 
     # Output the result as a comma-separated string
-    print(f"{primary_color},{secondary_color},{clothing_type},{texture},{fabric},{shape},{pattern},{style}")
+    print(f"{primary_color},{secondary_color},{clothing_type},{texture},{fabric},{shape},{pattern},{style},{isTop}")
