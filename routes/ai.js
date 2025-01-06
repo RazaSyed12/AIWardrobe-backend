@@ -63,79 +63,116 @@ function calculateOutfitScores(top, bottom, preference) {
 // ------------------ ROUTES ------------------
 
 // POST /api/ai/generate-outfits
-router.post("/generate-outfits", async (req, res) => {
-  const { userId, preferences = {} } = req.body;
+router.get("/generate-outfits", async (req, res) => {
+  const { preferences = {} } = req.query;
+  const userId = req.user._id;
 
   try {
-    // 1) Fetch user’s ClothingItem docs
-    const clothingItems = await ClothingItem.find({ userId });
+    // Build query based on preferences
+    let query = { userId };
+    let sortField = "overallScore";
 
-    // 2) Separate into tops & bottoms
-    const tops = clothingItems.filter((item) =>
-      ["Sweater", "Shirt", "Blouse", "Top", "T-Shirt"].includes(item.type)
-    );
-    const bottoms = clothingItems.filter((item) =>
-      ["Skirt", "Pants", "Jeans", "Shorts", "Bottom"].includes(item.type)
-    );
-
-    if (!tops.length || !bottoms.length) {
-      return res.status(400).json({
-        error: "Not enough clothing items to generate outfits.",
-      });
+    // Handle collection preference
+    if (preferences.collectionId) {
+      query["$or"] = [
+        { "topId.collectionId": preferences.collectionId },
+        { "bottomId.collectionId": preferences.collectionId },
+      ];
     }
 
-    // 3) Generate combos & score them
-    const outfits = [];
-    tops.forEach((top) => {
-      bottoms.forEach((bottom) => {
-        const formalScore = calculateOutfitScores(top, bottom, "Formal");
-        const casualScore = calculateOutfitScores(top, bottom, "Casual");
+    // Handle specific clothing item
+    if (preferences.clothingItemId) {
+      query["$or"] = [
+        { topId: preferences.clothingItemId },
+        { bottomId: preferences.clothingItemId },
+      ];
+    }
 
-        // Weighted overall
-        const overallScore =
-          (preferences.formal || 0.5) * formalScore +
-          (preferences.casual || 0.5) * casualScore;
+    // Handle occasion preference
+    if (preferences.occasion) {
+      if (preferences.occasion === "formal") {
+        sortField = "formalScore";
+      } else if (preferences.occasion === "casual") {
+        sortField = "casualScore";
+      }
+    }
 
-        outfits.push({
-          userId,
-          topId: top._id,
-          bottomId: bottom._id,
-          overallScore,
-          formalScore,
-          casualScore,
-          date: new Date(),
-        });
+    // Find outfits matching criteria
+    const outfit = await AIOutfit.findOne(query)
+      .sort({ [sortField]: -1 })
+      .populate({
+        path: "topId",
+        select: "imageUrl name type primaryColor secondaryColor collectionId",
+      })
+      .populate({
+        path: "bottomId",
+        select: "imageUrl name type primaryColor secondaryColor collectionId",
       });
-    });
 
-    // 4) Insert into AIOutfit
-    const savedOutfits = await AIOutfit.insertMany(outfits);
+    if (!outfit) {
+      return res
+        .status(404)
+        .json({ error: "No outfits found matching preferences" });
+    }
 
-    // Format the response to include only outfitId, topId, bottomId, and scores
-    const formattedOutfits = savedOutfits.map((outfit) => ({
+    // Additional color filtering if specified
+    if (preferences.color) {
+      const hasColor = (item) => {
+        return (
+          item.primaryColor === preferences.color ||
+          item.secondaryColor === preferences.color
+        );
+      };
+
+      if (!hasColor(outfit.topId) && !hasColor(outfit.bottomId)) {
+        return res
+          .status(404)
+          .json({ error: "No outfits found with specified color" });
+      }
+    }
+
+    // Format the response
+    const formattedOutfit = {
       outfitId: outfit._id,
-      topId: outfit.topId,
-      bottomId: outfit.bottomId,
-      overallScore: outfit.overallScore,
-      formalScore: outfit.formalScore,
-      casualScore: outfit.casualScore,
-    }));
+      top: {
+        id: outfit.topId._id,
+        imageUrl: outfit.topId.imageUrl,
+        name: outfit.topId.name,
+        type: outfit.topId.type,
+        primaryColor: outfit.topId.primaryColor,
+        secondaryColor: outfit.topId.secondaryColor,
+        collectionId: outfit.topId.collectionId,
+      },
+      bottom: {
+        id: outfit.bottomId._id,
+        imageUrl: outfit.bottomId.imageUrl,
+        name: outfit.bottomId.name,
+        type: outfit.bottomId.type,
+        primaryColor: outfit.bottomId.primaryColor,
+        secondaryColor: outfit.bottomId.secondaryColor,
+        collectionId: outfit.bottomId.collectionId,
+      },
+      scores: {
+        overall: outfit.overallScore,
+        formal: outfit.formalScore,
+        casual: outfit.casualScore,
+      },
+    };
 
-    res.status(201).json({
-      message: "Outfits generated successfully",
-      outfits: formattedOutfits,
+    res.status(200).json({
+      message: "Successfully retrieved preferred outfit",
+      outfit: formattedOutfit,
     });
   } catch (error) {
-    console.error("Error generating outfits:", error.message);
-    res.status(500).json({ error: "Failed to generate outfits" });
+    console.error("Error fetching preferred outfit:", error.message);
+    res.status(500).json({ error: "Failed to fetch preferred outfit" });
   }
 });
 
 // GET /api/ai/fetch-outfits
 router.get("/fetch-outfits", async (req, res) => {
-  const { userId } = req.query;
   const { preference, sortBy = "overallScore" } = req.query;
-
+  const userId = req.user._id;
   try {
     // 1) Fetch all outfits for the user, sorted by the desired field
     const outfits = await AIOutfit.find({ userId }).sort({ [sortBy]: -1 });

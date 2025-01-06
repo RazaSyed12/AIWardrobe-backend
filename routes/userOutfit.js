@@ -120,6 +120,7 @@ router.delete("/user-outfits/:outfitId", async (req, res) => {
 router.get("/fetch-outfits", async (req, res) => {
   try {
     const userId = req.user._id;
+    console.log("userId", userId);
     const {
       category = "overallScore",
       preference, // optional

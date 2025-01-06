@@ -103,7 +103,7 @@ app.use("/wardrobe", authMiddleware, wardrobeRoutes);
 app.use("/outfits", authMiddleware, userOutfitRoutes);
 
 // (Optional) AI routes if needed
-app.use("/api/ai", aiRoutes);
+app.use("/api/ai", authMiddleware, aiRoutes);
 
 // Global error handling
 app.use((err, req, res, next) => {

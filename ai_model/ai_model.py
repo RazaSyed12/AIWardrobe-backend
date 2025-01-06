@@ -9,7 +9,9 @@ def process_image(image_path):
     # Dummy attributes that the AI model will predict
     primary_colors = ['Red', 'Blue', 'Green', 'Yellow', 'Black']
     secondary_colors = ['White', 'Gray', 'None']  # None means no secondary color
-    types = ['T-Shirt', 'Sweater', 'Jacket', 'Jeans', 'Skirt']
+    # types = ['T-Shirt', 'Sweater', 'Jacket', 'Jeans', 'Skirt']
+    types = ['T-Shirt', 'Sweater']
+
     isTop = ['true','false']
     textures = ['Smooth', 'Rough', 'Soft', 'Stiff']
     fabrics = ['Cotton', 'Wool', 'Polyester', 'Silk']
