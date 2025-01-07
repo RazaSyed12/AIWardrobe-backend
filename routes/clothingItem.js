@@ -76,6 +76,65 @@ function calculateOutfitScores(top, bottom, preference) {
   return score;
 }
 
+// Test function for scoring helpers
+function testScoringHelpers() {
+  // Test data
+  const testTop = {
+    type: "Blazer",
+    texture: "checkered",
+    fabric: "wool",
+    shape: "fitted",
+    pattern: "solid",
+    style: "classic",
+  };
+
+  const testBottom = {
+    type: "Chinos",
+    texture: "flat",
+    fabric: "cotton",
+    shape: "straight-leg",
+    pattern: "plain",
+    style: "tailored",
+  };
+
+  // Test category scoring
+  console.log("Category Score Test:");
+  const catScore = getCategoryScore(testTop.type, testBottom.type, "Formal");
+  console.log(`Score for ${testTop.type} with ${testBottom.type}: ${catScore}`);
+
+  // Test attribute scoring
+  console.log("\nAttribute Score Tests:");
+  console.log(
+    "Texture Score:",
+    getAttributeScore("Texture", "Formal", testTop.texture)
+  );
+  console.log(
+    "Fabric Score:",
+    getAttributeScore("Fabric", "Formal", testTop.fabric)
+  );
+  console.log(
+    "Shape Score:",
+    getAttributeScore("Shape", "Formal", testTop.shape)
+  );
+  console.log(
+    "Pattern Score:",
+    getAttributeScore("Part", "Formal", testTop.pattern)
+  );
+  console.log(
+    "Style Score:",
+    getAttributeScore("Style", "Formal", testTop.style)
+  );
+
+  // Test full outfit scoring
+  console.log("\nFull Outfit Scores:");
+  const formalScore = calculateOutfitScores(testTop, testBottom, "Formal");
+  const casualScore = calculateOutfitScores(testTop, testBottom, "Casual");
+  console.log("Formal Score:", formalScore);
+  console.log("Casual Score:", casualScore);
+}
+
+testScoringHelpers();
+
 // Helper to classify items into tops and bottoms
 function classifyClothingItems(clothingItems) {
   const tops = [];

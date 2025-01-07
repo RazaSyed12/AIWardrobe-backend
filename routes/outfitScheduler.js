@@ -8,8 +8,8 @@ import moment from "moment";
 
 // POST /api/schedule-outfit
 router.post("/schedule-outfit", async (req, res) => {
-  const { date, outfitId, userId } = req.body;
-
+  const { date, outfitId } = req.body;
+  const userId = req.user._id;
   // Validate input
   if (!date || !outfitId || !userId) {
     return res
@@ -132,7 +132,8 @@ router.delete("/scheduled-outfits/:id", async (req, res) => {
 //PATCH /api/outfit-scheduler/scheduled-outfits/:id
 router.patch("/scheduled-outfits/:id", async (req, res) => {
   const { id } = req.params;
-  const { date, outfitId, userId } = req.body;
+  const { date, outfitId } = req.body;
+  const userId = req.user._id;
 
   // Prepare update object
   const updateData = {};
