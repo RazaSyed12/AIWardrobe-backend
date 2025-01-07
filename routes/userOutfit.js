@@ -66,6 +66,8 @@ router.post("/user-outfits", async (req, res) => {
         outfitId: savedOutfit._id,
         topId: savedOutfit.topId,
         bottomId: savedOutfit.bottomId,
+        outfitName: savedOutfit.outfitName,
+        date: savedOutfit.date,
       },
     });
   } catch (error) {
