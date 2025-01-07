@@ -84,8 +84,7 @@ router.put("/user-outfits/:outfitId", async (req, res) => {
   try {
     const { outfitId } = req.params;
     const userId = req.user._id;
-    const { topId, bottomId, overallScore, formalScore, casualScore } =
-      req.body;
+    const { topId, bottomId, outfitName } = req.body;
 
     const outfit = await UserOutfit.findOne({ _id: outfitId, userId });
     if (!outfit) {
@@ -97,9 +96,7 @@ router.put("/user-outfits/:outfitId", async (req, res) => {
     // Update fields if provided
     if (topId !== undefined) outfit.topId = topId;
     if (bottomId !== undefined) outfit.bottomId = bottomId;
-    if (overallScore !== undefined) outfit.overallScore = overallScore;
-    if (formalScore !== undefined) outfit.formalScore = formalScore;
-    if (casualScore !== undefined) outfit.casualScore = casualScore;
+    if (outfitName !== undefined) outfit.outfitName = outfitName;
 
     await outfit.save();
     res.status(200).json({
