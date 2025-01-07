@@ -13,7 +13,7 @@ const userOutfitSchema = new mongoose.Schema({
     ref: "ClothingItem",
     required: true,
   },
-  name: { type: String, required: true },
+  outfitName: { type: String, default: "User Outfit" },
   date: { type: Date, default: Date.now },
 });
 

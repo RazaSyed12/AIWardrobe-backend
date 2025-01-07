@@ -15,7 +15,7 @@ router.use(authMiddleware);
 router.post("/user-outfits", async (req, res) => {
   try {
     const userId = req.user._id;
-    const { topId, bottomId } = req.body;
+    const { topId, bottomId, outfitName } = req.body;
 
     if (!topId || !bottomId) {
       return res
@@ -55,7 +55,7 @@ router.post("/user-outfits", async (req, res) => {
       userId,
       topId,
       bottomId,
-      name: "User Outfit",
+      outfitName,
       date: new Date(),
     });
 
