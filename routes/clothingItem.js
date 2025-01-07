@@ -251,18 +251,20 @@ router.post(
           }
           if (currentValue) values.push(currentValue.trim());
 
+
           // Helper function to parse array values
           const parseValue = (val) => {
-            if (val === "[]") return null;
+            if (val === "[]") return [];
             if (val.startsWith("[") && val.endsWith("]")) {
               // Parse Python-style array
               const arrayContent = val.slice(2, -2).split("', '");
-              return arrayContent;
+              return arrayContent.map(item => item.trim());
             }
             if (val === "False") return false;
             if (val === "True") return true;
             return val;
           };
+
 
           // Suppose the AI returns a comma-separated list of 8 attributes
           const [
@@ -292,6 +294,8 @@ router.post(
           clothingItem.pattern = parseValue(patternRaw);
           clothingItem.style = parseValue(styleRaw);
           clothingItem.isTop = parseValue(isTopRaw);
+          
+          console.log(clothingItem);
 
           await wardrobe.save();
 
