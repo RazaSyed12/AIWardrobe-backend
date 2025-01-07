@@ -20,16 +20,26 @@ def process_image(image_path):
     styles = ['Casual', 'Formal', 'Sporty', 'Vintage']
     isTop = ['true','false']
 
-    primary_color = choice(primary_colors)
-    secondary_color = choice(secondary_colors)
-    clothing_type = choice(types)
-    texture = choice(textures)
-    fabric = choice(fabrics)
-    shape = choice(shapes)
-    pattern = choice(patterns)
-    style = choice(styles)
-    isTop = choice(isTop)
+    # primary_color = choice(primary_colors)
+    # secondary_color = choice(secondary_colors)
+    # clothing_type = choice(types)
+    # texture = choice(textures)
+    # fabric = choice(fabrics)
+    # shape = choice(shapes)
+    # pattern = choice(patterns)
+    # style = choice(styles)
+    # isTop = choice(isTop)
 
+    primary_color = '#4f3e31'
+    secondary_color = '#898175'
+    clothing_type = 'Shorts'
+    texture = []
+    fabric = ['leather']
+    shape = ['pencil']
+    pattern = ['drawstring', 'flat', 'flat_front']
+    style = ['running']
+    isTop = 'False'
+    
     # Return the generated attributes
     return primary_color, secondary_color, clothing_type, texture, fabric, shape, pattern, style, isTop
 
