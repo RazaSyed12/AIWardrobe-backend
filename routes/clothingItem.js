@@ -81,13 +81,17 @@ function classifyClothingItems(clothingItems) {
   const tops = [];
   const bottoms = [];
 
+  // console.log("clothingItems:", clothingItems);
   clothingItems.forEach((item) => {
-    if (item.isTop === "True" || item.isTop === true) {
+    if (item.isTop === "True" || item.isTop === "true") {
       tops.push(item);
-    } else if (item.isTop === "False" || item.isTop === false) {
+    } else if (item.isTop === "False" || item.isTop === "false") {
       bottoms.push(item);
     }
   });
+
+  console.log("tops:", tops);
+  console.log("bottoms:", bottoms);
 
   return { tops, bottoms };
 }
@@ -294,7 +298,8 @@ router.post(
             allClothingItems.push(...col.clothes);
           });
           const { tops, bottoms } = classifyClothingItems(allClothingItems);
-
+          console.log("tops:", tops);
+          console.log("bottoms:", bottoms);
           // If enough items exist, generate outfits
           if (tops.length >= 2 && bottoms.length >= 2) {
             await generateAndStoreOutfits(userId, tops, bottoms);
