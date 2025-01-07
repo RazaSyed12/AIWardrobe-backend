@@ -48,3 +48,9 @@ target/
 
 
 uploads/
+
+ai_models/.env
+ai_models/attributes_FINAL.pth
+ai_models/Attributes_Types.csv
+ai_models/bounding_box_FINAL.pth
+ai_models/classification_FINAL.pth
