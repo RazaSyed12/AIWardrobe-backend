@@ -1,6 +1,7 @@
 import express from "express";
 import UserOutfit from "../models/UserOutfit.js";
 import authMiddleware from "../middleware/auth.js";
+import Wardrobe from "../models/Wardrobe.js";
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ router.use(authMiddleware);
  */
 router.post("/user-outfits", async (req, res) => {
   try {
-    const userId = req.user._id; // or req.user._id.toString()
+    const userId = req.user._id;
     const { topId, bottomId } = req.body;
 
     if (!topId || !bottomId) {
@@ -22,7 +23,32 @@ router.post("/user-outfits", async (req, res) => {
         .json({ error: "topId and bottomId are required." });
     }
 
-    // Optional: Validate topId and bottomId belong to user's clothes, etc.
+    // Find the wardrobe and validate that the clothing items exist
+    const wardrobe = await Wardrobe.findOne({ userId });
+    if (!wardrobe) {
+      return res.status(404).json({ error: "Wardrobe not found." });
+    }
+
+    let topFound = false;
+    let bottomFound = false;
+
+    // Check all collections for the clothing items
+    for (const collection of wardrobe.collections) {
+      for (const clothingItem of collection.clothes) {
+        if (clothingItem._id.toString() === topId) {
+          topFound = true;
+        }
+        if (clothingItem._id.toString() === bottomId) {
+          bottomFound = true;
+        }
+      }
+    }
+
+    if (!topFound || !bottomFound) {
+      return res.status(400).json({
+        error: "One or both clothing items not found in user's wardrobe.",
+      });
+    }
 
     // Create a new outfit with minimal or default scores
     const newOutfit = new UserOutfit({
@@ -59,7 +85,7 @@ router.put("/user-outfits/:outfitId", async (req, res) => {
     const { topId, bottomId, overallScore, formalScore, casualScore } =
       req.body;
 
-    const outfit = await AIOutfit.findOne({ _id: outfitId, userId });
+    const outfit = await UserOutfit.findOne({ _id: outfitId, userId });
     if (!outfit) {
       return res
         .status(404)
@@ -93,7 +119,7 @@ router.delete("/user-outfits/:outfitId", async (req, res) => {
     const { outfitId } = req.params;
     const userId = req.user._id;
 
-    const deletedOutfit = await AIOutfit.findOneAndDelete({
+    const deletedOutfit = await UserOutfit.findOneAndDelete({
       _id: outfitId,
       userId,
     });
@@ -120,68 +146,10 @@ router.delete("/user-outfits/:outfitId", async (req, res) => {
 router.get("/fetch-outfits", async (req, res) => {
   try {
     const userId = req.user._id;
-    console.log("userId", userId);
-    const {
-      category = "overallScore",
-      preference, // optional
-      page = 1,
-      limit = 10,
-    } = req.query;
 
-    // Validate query parameters
-    const validCategories = [
-      "overallScore",
-      "formalScore",
-      "casualScore",
-      // "summerScore",
-      // "winterScore",
-      // "fashionScore",
-      // Add additional categories if needed
-    ];
-    if (!validCategories.includes(category)) {
-      return res.status(400).json({ error: "Invalid category parameter." });
-    }
+    const outfits = await UserOutfit.find({ userId });
 
-    // (Optional) Validate preference if you use that
-    const validPreferences = [
-      "formal",
-      "casual" /* "summer", "winter", etc. */,
-    ];
-    if (preference && !validPreferences.includes(preference)) {
-      return res.status(400).json({ error: "Invalid preference parameter." });
-    }
-
-    // Pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Fetch outfits from DB, sorted by category
-    let outfits = await AIOutfit.find({ userId })
-      .sort({ [category]: -1 })
-      .populate("topId", "imageUrl name") // Ensure topId references ClothingItem
-      .populate("bottomId", "imageUrl name")
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    // Filter by preference (only if the score > 0, or your logic)
-    if (preference) {
-      outfits = outfits.filter((outfit) => {
-        const pScore = outfit[`${preference}Score`];
-        return pScore && pScore > 0;
-      });
-    }
-
-    // Format the response
-    const formattedOutfits = outfits.map((outfit) => ({
-      outfitId: outfit._id,
-      topId: outfit.topId,
-      bottomId: outfit.bottomId,
-      overallScore: outfit.overallScore,
-      formalScore: outfit.formalScore,
-      casualScore: outfit.casualScore,
-      date: outfit.date,
-    }));
-
-    res.status(200).json(formattedOutfits);
+    res.status(200).json(outfits);
   } catch (error) {
     console.error("Error fetching outfits:", error.message);
     res.status(500).json({ error: "Failed to fetch outfits." });
