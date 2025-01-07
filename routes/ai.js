@@ -69,7 +69,7 @@ function calculateOutfitScores(top, bottom, preference) {
 router.get("/generate-outfits", async (req, res) => {
   const { preferences = {} } = req.query;
   const userId = req.user._id;
-
+  console.log(userId);
   try {
     // Build query based on preferences
     let query = { userId };
@@ -101,18 +101,7 @@ router.get("/generate-outfits", async (req, res) => {
     }
 
     // Find outfits matching criteria
-    const outfit = await AIOutfit.findOne(query)
-      .sort({ [sortField]: -1 })
-      .populate({
-        path: "topId",
-        select:
-          "imageUrl name type primaryColor secondaryColor collectionId texture fabric shape pattern style",
-      })
-      .populate({
-        path: "bottomId",
-        select:
-          "imageUrl name type primaryColor secondaryColor collectionId texture fabric shape pattern style",
-      });
+    const outfit = await AIOutfit.findOne(query).sort({ [sortField]: -1 });
 
     if (!outfit) {
       return res
@@ -137,37 +126,21 @@ router.get("/generate-outfits", async (req, res) => {
       }
     }
 
-    // Format outfit for response
-    const formattedOutfit = {
-      outfitId: outfit._id,
-      top: {
-        id: outfit.topId._id,
-        name: outfit.topId.name,
-        imageUrl: outfit.topId.imageUrl,
-        type: outfit.topId.type,
-        primaryColor: outfit.topId.primaryColor,
-        secondaryColor: outfit.topId.secondaryColor,
-        collectionId: outfit.topId.collectionId,
-      },
-      bottom: {
-        id: outfit.bottomId._id,
-        name: outfit.bottomId.name,
-        imageUrl: outfit.bottomId.imageUrl,
-        type: outfit.bottomId.type,
-        primaryColor: outfit.bottomId.primaryColor,
-        secondaryColor: outfit.bottomId.secondaryColor,
-        collectionId: outfit.bottomId.collectionId,
-      },
-      scores: {
-        overall: outfit.overallScore,
-        formal: outfit.formalScore,
-        casual: outfit.casualScore,
-      },
-    };
-
     res.status(200).json({
       message: "Successfully retrieved preferred outfit",
-      outfit: formattedOutfit,
+      outfit: {
+        outfitId: outfit._id,
+        top: outfit.topId,
+        bottom: outfit.bottomId,
+        scores: {
+          overall: outfit.overallScore,
+          formal: outfit.formalScore,
+          casual: outfit.casualScore,
+          summer: outfit.summerScore,
+          winter: outfit.winterScore,
+          fashion: outfit.fashionScore,
+        },
+      },
     });
   } catch (error) {
     console.error("Error fetching preferred outfit:", error.message);
