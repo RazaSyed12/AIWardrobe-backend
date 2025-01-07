@@ -1,277 +1,3 @@
-// // import { execFile } from "child_process";
-// // import path from "path";
-// // import express from "express";
-// // import multer from "multer";
-// // import { fileURLToPath } from "url"; // Handle __dirname in ES module
-// // import Wardrobe from "../models/Wardrobe.js";
-// // import { v4 as uuidv4 } from "uuid"; // For generating unique file names
-// // import authMiddleware from "../middleware/auth.js"; // Import the auth middleware
-// // import fs from "fs"; // For file and directory operations
-// // import AIOutfit from "../models/AIOutfit.js"; // Import the AIOutfit model
-// // import ClothingItem from "../models/ClothingItem.js"; // Import the ClothingItem model
-// // import scoringData from "../scoring-data/scoringData.json" with { type: "json" };
-
-// // const router = express.Router();
-
-// // // Get __dirname equivalent in ES module
-// // const __filename = fileURLToPath(import.meta.url);
-// // const __dirname = path.dirname(__filename);
-
-// // // Configure multer storage to keep the correct file extension and organize by user
-// // const storage = multer.diskStorage({
-// //   destination: (req, file, cb) => {
-// //     const userId = req.user._id.toString(); // Get the user ID from the authenticated user
-// //     const userDir = `uploads/users/${userId}/clothingItems`; // Create directory for the user's clothing items
-// //     fs.mkdirSync(userDir, { recursive: true }); // Ensure the user directory exists
-// //     cb(null, userDir); // Save files in the user's clothingItems directory
-// //   },
-// //   filename: (req, file, cb) => {
-// //     const ext = path.extname(file.originalname); // Get the file extension
-// //     const uniqueName = uuidv4() + ext; // Generate a unique name with the correct extension
-// //     cb(null, uniqueName); // Save the file with the unique name
-// //   },
-// // });
-
-// // // Set up multer to use the custom storage configuration
-// // const upload = multer({
-// //   storage: storage,
-// //   fileFilter: (req, file, cb) => {
-// //     // Only allow image files
-// //     if (!file.mimetype.startsWith("image/")) {
-// //       return cb(new Error("File is not an image"), false);
-// //     }
-// //     cb(null, true);
-// //   },
-// // });
-
-// // // Apply auth middleware to all routes
-// // router.use(authMiddleware);
-
-// // // Route to add a clothing item to a collection (with automatic AI processing)
-// // router.post(
-// //   "/collections/:collectionId/clothes",
-// //   upload.single("image"),
-// //   async (req, res) => {
-// //     try {
-// //       const { collectionId } = req.params;
-// //       const { name } = req.body;
-
-// //       // Extract the authenticated user's ID from req.user (from the JWT)
-// //       const userId = req.user._id.toString();
-
-// //       if (!name || !req.file) {
-// //         return res
-// //           .status(400)
-// //           .json({ error: "Clothing name and image are required." });
-// //       }
-
-// //       // Find the collection in the user's wardrobe
-// //       const wardrobe = await Wardrobe.findOne({
-// //         userId,
-// //         "collections._id": collectionId,
-// //       });
-// //       if (!wardrobe) {
-// //         return res.status(404).json({ error: "Collection not found." });
-// //       }
-
-// //       // Add the clothing item (name and image only for now)
-// //       const newClothingItem = {
-// //         name,
-// //         imageUrl: `/uploads/users/${userId}/clothingItems/${req.file.filename}`, // Save the image URL
-// //         primaryColor: null, // Will be updated by AI model
-// //         secondaryColor: null, // Will be updated by AI model
-// //         type: null, // Will be updated by AI model
-// //         texture: null, // Will be updated by AI model
-// //         fabric: null, // Will be updated by AI model
-// //         shape: null, // Will be updated by AI model
-// //         pattern: null, // Will be updated by AI model
-// //         style: null, // Will be updated by AI model
-// //       };
-
-// //       const collection = wardrobe.collections.id(collectionId);
-// //       collection.clothes.push(newClothingItem); // Add clothing item to the collection
-// //       const savedWardrobe = await wardrobe.save(); // Save the wardrobe
-
-// //       const clothingItem = collection.clothes[collection.clothes.length - 1]; // Get the last added item
-// //       const imagePath = path.join(
-// //         __dirname,
-// //         "..",
-// //         "uploads",
-// //         "users",
-// //         userId,
-// //         "clothingItems",
-// //         path.basename(clothingItem.imageUrl)
-// //       );
-
-// //       // Build the absolute path to the AI model script
-// //       const aiModelPath = path.join(__dirname, "..", "ai_model", "ai_model.py");
-
-// //       // Automatically trigger AI processing after upload
-// //       execFile(
-// //         "python",
-// //         [aiModelPath, imagePath],
-// //         async (error, stdout, stderr) => {
-// //           if (error) {
-// //             console.error(`Error executing AI model: ${error.message}`);
-// //             return res
-// //               .status(500)
-// //               .json({ error: "Error processing the image" });
-// //           }
-
-// //           if (stderr) {
-// //             console.error(`AI Model STDERR: ${stderr}`);
-// //           }
-
-// //           // Parse AI model result (primaryColor, secondaryColor, type, texture, fabric, shape, pattern, style)
-// //           const [
-// //             primaryColor,
-// //             secondaryColor,
-// //             type,
-// //             texture,
-// //             fabric,
-// //             shape,
-// //             pattern,
-// //             style,
-// //           ] = stdout.trim().split(",");
-
-// //           if (!primaryColor || !type) {
-// //             console.error("AI model returned invalid output.");
-// //             return res.status(500).json({ error: "AI processing failed" });
-// //           }
-
-// //           // Update the clothing item with AI-generated values
-// //           clothingItem.primaryColor = primaryColor;
-// //           clothingItem.secondaryColor = secondaryColor || null;
-// //           clothingItem.type = type;
-// //           clothingItem.texture = texture || null;
-// //           clothingItem.fabric = fabric || null;
-// //           clothingItem.shape = shape || null;
-// //           clothingItem.pattern = pattern || null;
-// //           clothingItem.style = style || null;
-
-// //           await wardrobe.save(); // Save the updated wardrobe
-
-// //           // **Outfit Generation Logic Starts Here**
-
-// //           // Fetch all clothing items for the user
-// //           const allClothingItems = [];
-
-// //           // Aggregate clothing items from all collections
-// //           wardrobe.collections.forEach((collection) => {
-// //             allClothingItems.push(...collection.clothes);
-// //           });
-
-// //           // Classify clothing items into tops and bottoms
-// //           const { tops, bottoms } = classifyClothingItems(allClothingItems);
-
-// //           // Check if there are enough items to generate outfits
-// //           if (tops.length >= 2 && bottoms.length >= 2) {
-// //             await generateAndStoreOutfits(userId, tops, bottoms);
-// //           }
-
-// //           res.status(201).json({
-// //             message: "Clothing item added and processed successfully",
-// //             wardrobe,
-// //           });
-// //         }
-// //       );
-// //     } catch (error) {
-// //       console.error("Error adding clothing item:", error.message);
-// //       res
-// //         .status(500)
-// //         .json({ error: "An error occurred while adding the clothing item." });
-// //     }
-// //   }
-// // );
-
-// // // Helper function to classify clothing items into tops and bottoms
-// // function classifyClothingItems(clothingItems) {
-// //   const tops = [];
-// //   const bottoms = [];
-
-// //   clothingItems.forEach((item) => {
-// //     if (["Sweater", "Shirt", "Blouse", "T-Shirt", "Top"].includes(item.type)) {
-// //       tops.push(item);
-// //     } else if (
-// //       ["Skirt", "Pants", "Jeans", "Shorts", "Bottom"].includes(item.type)
-// //     ) {
-// //       bottoms.push(item);
-// //     }
-// //     console.log("Generating tops and bottoms:", tops, bottoms);
-// //   });
-
-// //   return { tops, bottoms };
-// // }
-
-// // // Helper function to generate and store outfits
-// // async function generateAndStoreOutfits(userId, tops, bottoms) {
-// //   const combinations = [];
-
-// //   // Generate all possible combinations of tops and bottoms
-// //   tops.forEach((top) => {
-// //     bottoms.forEach((bottom) => {
-// //       combinations.push({ top, bottom });
-// //     });
-// //     console.log("Generating outfits with tops and bottoms:", tops, bottoms);
-// //   });
-
-// //   // Calculate scores and prepare outfits for storage
-// //   const outfits = combinations.map(({ top, bottom }) => {
-// //     const formalScore = calculateOutfitScores(top, bottom, "Formal");
-// //     const casualScore = calculateOutfitScores(top, bottom, "Casual");
-// //     const overallScore = calculateOverallScore(formalScore, casualScore);
-
-// //     return {
-// //       userId,
-// //       topId: top._id,
-// //       bottomId: bottom._id,
-// //       overallScore,
-// //       formalScore,
-// //       casualScore,
-// //       date: new Date(),
-// //     };
-// //   });
-
-// //   // Save generated outfits to the database
-// //   await AIOutfit.insertMany(outfits);
-// //   console.log("Outfits generated and stored for user:", userId);
-// // }
-
-// // // Helper function to calculate outfit scores
-// // function calculateOutfitScores(top, bottom, category) {
-// //   const attributes = ["type", "texture", "fabric", "shape", "pattern", "style"];
-// //   let score = 0;
-
-// //   attributes.forEach((attr) => {
-// //     const topAttrValue = top[attr];
-// //     const bottomAttrValue = bottom[attr];
-
-// //     // Get score from scoring data
-// //     const topScore =
-// //       scoringData[`${capitalize(attr)} (${category})`]?.[0][topAttrValue] || 0;
-// //     const bottomScore =
-// //       scoringData[`${capitalize(attr)} (${category})`]?.[0][bottomAttrValue] ||
-// //       0;
-
-// //     score += topScore + bottomScore;
-// //   });
-
-// //   return score;
-// // }
-
-// // // Helper function to calculate overall score
-// // function calculateOverallScore(formalScore, casualScore) {
-// //   const weights = { formal: 0.6, casual: 0.4 };
-// //   return formalScore * weights.formal + casualScore * weights.casual;
-// // }
-
-// // // Helper function to capitalize attribute names
-// // function capitalize(str) {
-// //   return str.charAt(0).toUpperCase() + str.slice(1);
-// // }
-
-// // export default router;
-
 import { execFile } from "child_process";
 import path from "path";
 import express from "express";
@@ -499,19 +225,57 @@ router.post(
           if (stderr) {
             console.error("AI Model STDERR:", stderr);
           }
+          // First, combine any split array values
+          let rawString = stdout.trim();
+          let inArray = false;
+          let values = [];
+          let currentValue = "";
+
+          for (let char of rawString) {
+            if (char === "[") inArray = true;
+            if (char === "]") {
+              inArray = false;
+              currentValue += char;
+              values.push(currentValue);
+              currentValue = "";
+              continue;
+            }
+            if (inArray) {
+              currentValue += char;
+            } else if (char === ",") {
+              if (currentValue) values.push(currentValue.trim());
+              currentValue = "";
+            } else {
+              currentValue += char;
+            }
+          }
+          if (currentValue) values.push(currentValue.trim());
+
+          // Helper function to parse array values
+          const parseValue = (val) => {
+            if (val === "[]") return null;
+            if (val.startsWith("[") && val.endsWith("]")) {
+              // Parse Python-style array
+              const arrayContent = val.slice(2, -2).split("', '");
+              return arrayContent;
+            }
+            if (val === "False") return false;
+            if (val === "True") return true;
+            return val;
+          };
 
           // Suppose the AI returns a comma-separated list of 8 attributes
           const [
             primaryColor,
             secondaryColor,
             type,
-            texture,
-            fabric,
-            shape,
-            pattern,
-            style,
-            isTop,
-          ] = stdout.trim().split(",");
+            textureRaw,
+            fabricRaw,
+            shapeRaw,
+            patternRaw,
+            styleRaw,
+            isTopRaw,
+          ] = values;
 
           if (!primaryColor || !type) {
             console.error("AI model returned invalid output.");
@@ -520,14 +284,15 @@ router.post(
 
           // Update with AI-generated values
           clothingItem.primaryColor = primaryColor;
-          clothingItem.secondaryColor = secondaryColor || null;
+          clothingItem.secondaryColor = secondaryColor;
           clothingItem.type = type;
-          clothingItem.texture = texture || null;
-          clothingItem.fabric = fabric || null;
-          clothingItem.shape = shape || null;
-          clothingItem.pattern = pattern || null; // or 'part'
-          clothingItem.style = style || null;
-          clothingItem.isTop = isTop || null;
+          clothingItem.texture = parseValue(textureRaw);
+          clothingItem.fabric = parseValue(fabricRaw);
+          clothingItem.shape = parseValue(shapeRaw);
+          clothingItem.pattern = parseValue(patternRaw);
+          clothingItem.style = parseValue(styleRaw);
+          clothingItem.isTop = parseValue(isTopRaw);
+
           await wardrobe.save();
 
           // Now re-classify all items to generate outfits
