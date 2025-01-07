@@ -34,106 +34,167 @@ function getCategoryScore(topType, bottomType, preference) {
 }
 
 // 2) Single-attribute tables (Texture, Fabric, Shape, Part, Style)
-function getAttributeScore(attribute, preference, value) {
-  if (!value) return 0; // handle null or empty
+function getAttributeScore(attribute, preference, value, value2) {
+  if (!value || !value2) return 0; // handle null or empty
+
+  // Handle both single value and array cases
+  const values = Array.isArray(value) ? value : [value];
+  const values2 = Array.isArray(value2) ? value2 : [value2];
 
   const dataKey = `${attribute} (${preference})`;
   const arr = scoringData[dataKey];
   if (!arr || !arr.length) return 0;
 
-  const scoringObj = arr[0];
-  return scoringObj[value] ?? 0;
+  let totalScore = 0;
+  let comparisons = 0;
+
+  // For each value in first array
+  for (const val1 of values) {
+    // Find matching scoring object
+    const scoringObj = arr.find((obj) => obj[attribute] === val1);
+    if (!scoringObj) continue;
+
+    // Add up scores for each value2 combination
+    for (const val2 of values2) {
+      if (scoringObj[val2] !== undefined) {
+        totalScore += scoringObj[val2];
+        comparisons++;
+      }
+    }
+  }
+
+  // Normalize score by dividing by the number of actual comparisons made
+  return comparisons > 0 ? totalScore / comparisons : 0;
 }
 
 // 3) Combined function to calculate formal/casual
 function calculateOutfitScores(top, bottom, preference) {
-  let score = 0;
+  // Define weightages for different attributes (total = 1.0)
+  const weights = {
+    category: 0.25, // Category match is very important (top-bottom compatibility)
+    texture: 0.15, // Texture contrast/harmony is quite important
+    fabric: 0.2, // Fabric compatibility is very important
+    shape: 0.2, // Shape/silhouette harmony is very important
+    pattern: 0.1, // Pattern coordination is less critical
+    style: 0.1, // Style matching is supplementary
+  };
 
-  // Categories cross-table
-  score += getCategoryScore(top.type, bottom.type, preference);
+  // Calculate weighted scores
+  let weightedScore = 0;
+
+  // Categories cross-table (type matching)
+  weightedScore +=
+    getCategoryScore(top.type, bottom.type, preference) * weights.category;
 
   // Texture
-  score += getAttributeScore("Texture", preference, top.texture);
-  score += getAttributeScore("Texture", preference, bottom.texture);
+  weightedScore +=
+    getAttributeScore("Texture", preference, top.texture, bottom.texture) *
+    weights.texture;
 
   // Fabric
-  score += getAttributeScore("Fabric", preference, top.fabric);
-  score += getAttributeScore("Fabric", preference, bottom.fabric);
+  weightedScore +=
+    getAttributeScore("Fabric", preference, top.fabric, bottom.fabric) *
+    weights.fabric;
 
   // Shape
-  score += getAttributeScore("Shape", preference, top.shape);
-  score += getAttributeScore("Shape", preference, bottom.shape);
+  weightedScore +=
+    getAttributeScore("Shape", preference, top.shape, bottom.shape) *
+    weights.shape;
 
-  // Part (or "pattern")
-  // If your item stores "part" in `pattern`, adapt accordingly:
-  score += getAttributeScore("Part", preference, top.pattern);
-  score += getAttributeScore("Part", preference, bottom.pattern);
+  // Pattern
+  weightedScore +=
+    getAttributeScore("Part", preference, top.pattern, bottom.pattern) *
+    weights.pattern;
 
   // Style
-  score += getAttributeScore("Style", preference, top.style);
-  score += getAttributeScore("Style", preference, bottom.style);
+  weightedScore +=
+    getAttributeScore("Style", preference, top.style, bottom.style) *
+    weights.style;
 
-  return score;
+  return weightedScore;
 }
 
 // Test function for scoring helpers
 function testScoringHelpers() {
   // Test data
   const testTop = {
-    type: "Blazer",
-    texture: "checkered",
-    fabric: "wool",
-    shape: "fitted",
-    pattern: "solid",
-    style: "classic",
+    type: "Anorak",
+    texture: ["rugby_striped", "stripe", "striped"],
+    fabric: ["knit"],
+    shape: ["pullover"],
+    pattern: ["crew", "hooded"],
+    style: ["biker"],
   };
 
   const testBottom = {
     type: "Chinos",
-    texture: "flat",
-    fabric: "cotton",
-    shape: "straight-leg",
-    pattern: "plain",
-    style: "tailored",
+    texture: ["rugby_striped", "stripe", "striped"],
+    fabric: ["knit"],
+    shape: ["pullover"],
+    pattern: ["crew", "hooded"],
+    style: ["tailored"],
   };
 
+  const preference = "Formal";
+  console.log(
+    "Outfit Score:",
+    calculateOutfitScores(testTop, testBottom, preference)
+  );
   // Test category scoring
   console.log("Category Score Test:");
-  const catScore = getCategoryScore(testTop.type, testBottom.type, "Formal");
-  console.log(`Score for ${testTop.type} with ${testBottom.type}: ${catScore}`);
+  const catScoreFormal = getCategoryScore(
+    testTop.type,
+    testBottom.type,
+    "Formal"
+  );
+  const catScoreCasual = getCategoryScore(
+    testTop.type,
+    testBottom.type,
+    "Casual"
+  );
+
+  console.log(
+    `Formal: Score for ${testTop.type} with ${testBottom.type}: ${catScoreFormal}`
+  );
+  console.log(
+    `Casual: Score for ${testTop.type} with ${testBottom.type}: ${catScoreCasual}`
+  );
 
   // Test attribute scoring
   console.log("\nAttribute Score Tests:");
   console.log(
     "Texture Score:",
-    getAttributeScore("Texture", "Formal", testTop.texture)
+    getAttributeScore("Texture", "Formal", testTop.texture, testBottom.texture),
+    getAttributeScore("Texture", "Casual", testTop.texture, testBottom.texture)
   );
   console.log(
     "Fabric Score:",
-    getAttributeScore("Fabric", "Formal", testTop.fabric)
+    getAttributeScore("Fabric", "Formal", testTop.fabric, testBottom.fabric),
+    getAttributeScore("Fabric", "Casual", testTop.fabric, testBottom.fabric)
   );
   console.log(
     "Shape Score:",
-    getAttributeScore("Shape", "Formal", testTop.shape)
+    getAttributeScore("Shape", "Formal", testTop.shape, testBottom.shape),
+    getAttributeScore("Shape", "Casual", testTop.shape, testBottom.shape)
   );
-  console.log(
-    "Pattern Score:",
-    getAttributeScore("Part", "Formal", testTop.pattern)
-  );
-  console.log(
-    "Style Score:",
-    getAttributeScore("Style", "Formal", testTop.style)
-  );
+  // console.log(
+  //   "Pattern Score:",
+  //   getAttributeScore("Part", "Formal", testTop.pattern)
+  // );
+  // console.log(
+  //   "Style Score:",
+  //   getAttributeScore("Style", "Formal", testTop.style)
+  // );
 
-  // Test full outfit scoring
-  console.log("\nFull Outfit Scores:");
-  const formalScore = calculateOutfitScores(testTop, testBottom, "Formal");
-  const casualScore = calculateOutfitScores(testTop, testBottom, "Casual");
-  console.log("Formal Score:", formalScore);
-  console.log("Casual Score:", casualScore);
+  // // Test full outfit scoring
+  // console.log("\nFull Outfit Scores:");
+  // const formalScore = calculateOutfitScores(testTop, testBottom, "Formal");
+  // const casualScore = calculateOutfitScores(testTop, testBottom, "Casual");
+  // console.log("Formal Score:", formalScore);
+  // console.log("Casual Score:", casualScore);
 }
 
-testScoringHelpers();
+// testScoringHelpers();
 
 // Helper to classify items into tops and bottoms
 function classifyClothingItems(clothingItems) {

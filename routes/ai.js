@@ -100,16 +100,19 @@ router.get("/generate-outfits", async (req, res) => {
       }
     }
 
-    // Find outfits matching criteria
-    const outfit = await AIOutfit.findOne(query).sort({ [sortField]: -1 });
+    // Find top 5 outfits matching criteria
+    const outfits = await AIOutfit.find(query)
+      .sort({ [sortField]: -1 })
+      .limit(5);
 
-    if (!outfit) {
+    if (!outfits || outfits.length === 0) {
       return res
         .status(404)
         .json({ error: "No outfits found matching preferences" });
     }
 
-    // Additional color filtering if specified
+    // Filter outfits by color if specified
+    let filteredOutfits = outfits;
     if (preferences.color) {
       const hasColor = (item) => {
         return (
@@ -119,32 +122,39 @@ router.get("/generate-outfits", async (req, res) => {
         );
       };
 
-      if (!hasColor(outfit.topId) && !hasColor(outfit.bottomId)) {
+      filteredOutfits = outfits.filter(
+        (outfit) => hasColor(outfit.topId) || hasColor(outfit.bottomId)
+      );
+
+      if (filteredOutfits.length === 0) {
         return res
           .status(404)
           .json({ error: "No outfits found with specified color" });
       }
     }
 
-    res.status(200).json({
-      message: "Successfully retrieved preferred outfit",
-      outfit: {
-        outfitId: outfit._id,
-        top: outfit.topId,
-        bottom: outfit.bottomId,
-        scores: {
-          overall: outfit.overallScore,
-          formal: outfit.formalScore,
-          casual: outfit.casualScore,
-          summer: outfit.summerScore,
-          winter: outfit.winterScore,
-          fashion: outfit.fashionScore,
-        },
+    // Format response with multiple outfits
+    const formattedOutfits = filteredOutfits.map((outfit) => ({
+      outfitId: outfit._id,
+      top: outfit.topId,
+      bottom: outfit.bottomId,
+      scores: {
+        overall: outfit.overallScore,
+        formal: outfit.formalScore,
+        casual: outfit.casualScore,
+        summer: outfit.summerScore,
+        winter: outfit.winterScore,
+        fashion: outfit.fashionScore,
       },
+    }));
+
+    res.status(200).json({
+      message: "Successfully retrieved preferred outfits",
+      outfits: formattedOutfits,
     });
   } catch (error) {
-    console.error("Error fetching preferred outfit:", error.message);
-    res.status(500).json({ error: "Failed to fetch preferred outfit" });
+    console.error("Error fetching preferred outfits:", error.message);
+    res.status(500).json({ error: "Failed to fetch preferred outfits" });
   }
 });
 
