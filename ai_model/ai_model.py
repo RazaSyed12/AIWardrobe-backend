@@ -9,11 +9,11 @@ from collections import Counter
 import torch
 from torchvision import models, transforms
 
-clasiification_path = "/Users/apple/Documents/AiWardrobe/backend/AIWardrobe-backend/ai_model/classification_FINAL.pth"
+clasiification_path = "C:/Users/syed.raza_venturediv/Documents/GitHub/AIWardrobe-backend/ai_model/classification_FINAL.pth"
 #clasiification_path = "classification_model_19.pth"
-boundin_box_path = "/Users/apple/Documents/AiWardrobe/backend/AIWardrobe-backend/ai_model/bounding_box_FINAL.pth"
-attributes_path = "/Users/apple/Documents/AiWardrobe/backend/AIWardrobe-backend/ai_model/attributes_FINAL.pth"
-attributes_type_path = "/Users/apple/Documents/AiWardrobe/backend/AIWardrobe-backend/ai_model/Attributes_Types.csv"
+boundin_box_path = "C:/Users/syed.raza_venturediv/Documents/GitHub/AIWardrobe-backend/ai_model/bounding_box_FINAL.pth"
+attributes_path = "C:/Users/syed.raza_venturediv/Documents/GitHub/AIWardrobe-backend/ai_model/attributes_FINAL.pth"
+attributes_type_path = "C:/Users/syed.raza_venturediv/Documents/GitHub/AIWardrobe-backend/ai_model/Attributes_Types.csv"
 
 learning_rate=0.01
 size_of_batch=128

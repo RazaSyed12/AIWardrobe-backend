@@ -82,18 +82,9 @@ function classifyClothingItems(clothingItems) {
   const bottoms = [];
 
   clothingItems.forEach((item) => {
-    // Decide how to classify by item.type
-    if (
-      ["Sweater", "Shirt", "Blouse", "T-Shirt", "Top", "Anorak"].includes(
-        item.type
-      )
-    ) {
+    if (item.isTop === "True" || item.isTop === true) {
       tops.push(item);
-    } else if (
-      ["Skirt", "Pants", "Jeans", "Capris", "Shorts", "Bottom"].includes(
-        item.type
-      )
-    ) {
+    } else if (item.isTop === "False" || item.isTop === false) {
       bottoms.push(item);
     }
   });
