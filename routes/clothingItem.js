@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import authMiddleware from "../middleware/auth.js";
 import fs from "fs";
 import AIOutfit from "../models/AIOutfit.js";
+import UserOutfit from "../models/UserOutfit.js";
 import ClothingItem from "../models/ClothingItem.js";
 
 // Import your big JSON:
@@ -472,9 +473,20 @@ router.delete(
         (item) => item._id.toString() !== clothingItemId
       );
 
+      // Delete outfits containing this clothing item
+      await AIOutfit.deleteMany({
+        userId,
+        $or: [{ topId: clothingItemId }, { bottomId: clothingItemId }],
+      });
+
+      await UserOutfit.deleteMany({
+        userId,
+        $or: [{ topId: clothingItemId }, { bottomId: clothingItemId }],
+      });
+
       const updatedWardrobe = await wardrobe.save();
       res.status(200).json({
-        message: "Clothing item deleted successfully",
+        message: "Clothing item and associated outfits deleted successfully",
         wardrobe: updatedWardrobe,
       });
     } catch (error) {
