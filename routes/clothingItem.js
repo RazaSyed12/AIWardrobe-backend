@@ -423,6 +423,9 @@ router.post(
           console.log("bottoms:", bottoms);
           // If enough items exist, generate outfits
           if (tops.length >= 2 && bottoms.length >= 2) {
+            // First delete any existing outfits for this user
+            await AIOutfit.deleteMany({ userId });
+            // Then generate new outfits
             await generateAndStoreOutfits(userId, tops, bottoms);
           }
 
@@ -473,7 +476,6 @@ router.delete(
         (item) => item._id.toString() !== clothingItemId
       );
 
-      // Delete outfits containing this clothing item
       await AIOutfit.deleteMany({
         userId,
         $or: [{ topId: clothingItemId }, { bottomId: clothingItemId }],
